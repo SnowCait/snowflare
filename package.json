@@ -2,7 +2,8 @@
   "name": "snowflare",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify"
+    "deploy": "wrangler deploy --minify",
+    "lint": "eslint"
   },
   "dependencies": {
     "hono": "^4.6.14"
