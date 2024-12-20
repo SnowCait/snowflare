@@ -1,2 +1,12 @@
-# snowflare
-Nostr relay running on Cloudflare Workers
+# Snowflare
+
+Nostr relay running on Cloudflare Workers.
+
+```
+npm install
+npm run dev
+```
+
+```
+npm run deploy
+```
