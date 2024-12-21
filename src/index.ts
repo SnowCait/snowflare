@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { Relay } from "./relay";
+import defaultConfig from "../config/default";
+import overrideConfig from "../config/override";
 
 type Bindings = {
   RELAY: DurableObjectNamespace<Relay>;
@@ -13,10 +15,18 @@ app.get("/", (c) => {
     const stub = c.env.RELAY.get(id);
     return stub.fetch(c.req.raw);
   } else if (c.req.header("Accept") === "application/nostr+json") {
-    return c.json({});
+    c.header("Access-Control-Allow-Origin", "*");
+    return c.json({ ...defaultConfig.nip11, ...overrideConfig.nip11 });
   } else {
     return c.text("Hello Hono!");
   }
+});
+
+app.options("/", (c) => {
+  c.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+  return new Response(null, {
+    status: 204,
+  });
 });
 
 export default app;
