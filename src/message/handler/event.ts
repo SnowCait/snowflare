@@ -1,25 +1,28 @@
 import { Event, matchFilter, verifyEvent } from "nostr-tools";
 import { MessageHandler } from "../handler";
-import { Connection } from "../../connection";
+import { Connections, errorConnectionNotFound } from "../../connection";
 import { nip11 } from "../../config";
 
 export class EventMessageHandler implements MessageHandler {
   #event: Event;
-  #getConnections: () => Map<WebSocket, Connection>;
 
-  constructor(event: Event, getConnections: () => Map<WebSocket, Connection>) {
+  constructor(event: Event) {
     this.#event = event;
-    this.#getConnections = getConnections;
   }
 
-  handle(ws: WebSocket) {
+  handle(ws: WebSocket, connections: Connections): void {
     if (!verifyEvent(this.#event)) {
       ws.send(JSON.stringify(["NOTICE", "invalid: event"]));
       return;
     }
 
     if (nip11.limitation.auth_required) {
-      const { auth } = ws.deserializeAttachment() as Connection;
+      const connection = connections.get(ws);
+      if (connection === undefined) {
+        errorConnectionNotFound();
+        return;
+      }
+      const { auth } = connection;
       if (auth?.pubkey !== this.#event.pubkey) {
         ws.send(
           JSON.stringify([
@@ -35,11 +38,11 @@ export class EventMessageHandler implements MessageHandler {
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 
-    this.broadcast();
+    this.broadcast(connections);
   }
 
-  private broadcast() {
-    for (const [ws, { subscriptions }] of this.#getConnections()) {
+  private broadcast(connections: Connections) {
+    for (const [ws, { subscriptions }] of connections) {
       for (const [id, filter] of subscriptions) {
         if (matchFilter(filter, this.#event)) {
           ws.send(JSON.stringify(["EVENT", id, this.#event]));

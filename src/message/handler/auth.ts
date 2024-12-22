@@ -2,24 +2,30 @@ import { Event } from "nostr-tools";
 import { MessageHandler } from "../handler";
 import { nip11 } from "../../config";
 import { Auth } from "../../auth";
-import { Connection, errorConnectionNotFound } from "../../connection";
+import {
+  Connection,
+  Connections,
+  errorConnectionNotFound,
+} from "../../connection";
 
 export class AuthMessageHandler implements MessageHandler {
   #event: Event;
-  #connections: Map<WebSocket, Connection>;
 
-  constructor(event: Event, connections: Map<WebSocket, Connection>) {
+  constructor(event: Event) {
     this.#event = event;
-    this.#connections = connections;
   }
 
-  handle(ws: WebSocket): void {
+  handle(
+    ws: WebSocket,
+    connections: Connections,
+    storeConnection: (connection: Connection) => void,
+  ): void {
     if (!nip11.limitation.auth_required) {
       ws.send(JSON.stringify(["NOTICE", "unsupported: auth"]));
       return;
     }
 
-    const connection = this.#connections.get(ws);
+    const connection = connections.get(ws);
     if (connection === undefined) {
       errorConnectionNotFound();
       return;
@@ -33,9 +39,7 @@ export class AuthMessageHandler implements MessageHandler {
     }
 
     connection.auth.pubkey = this.#event.pubkey;
-
-    this.#connections.set(ws, connection);
-    ws.serializeAttachment(connection);
+    storeConnection(connection);
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
   }
 }

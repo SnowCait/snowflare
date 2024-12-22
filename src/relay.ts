@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { Event, Filter } from "nostr-tools";
 import { Env } from "hono";
-import { Connection, errorConnectionNotFound } from "./connection";
+import { Connection } from "./connection";
 import { nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { EventMessageHandler } from "./message/handler/event";
@@ -75,25 +75,9 @@ export class Relay extends DurableObject {
   }
 
   private handleMessage(ws: WebSocket, message: string): void {
-    const storeSubscription = (
-      subscriptionId: string,
-      filter: Filter,
-    ): void => {
-      const connection = this.#connections.get(ws);
-      if (connection === undefined) {
-        errorConnectionNotFound();
-        return;
-      } else {
-        const { subscriptions } = connection;
-        subscriptions.set(subscriptionId, filter);
-        const newConnection = { ...connection, subscriptions };
-        this.#connections.set(ws, newConnection);
-        ws.serializeAttachment(newConnection);
-      }
-    };
-
-    const getConnections = (): Map<WebSocket, Connection> => {
-      return this.#connections;
+    const storeConnection = (connection: Connection): void => {
+      this.#connections.set(ws, connection);
+      ws.serializeAttachment(connection);
     };
 
     try {
@@ -107,33 +91,32 @@ export class Relay extends DurableObject {
           if (typeof idOrEvent !== "object") {
             return;
           }
-          const handler = new EventMessageHandler(idOrEvent, getConnections);
-          handler.handle(ws);
+          const handler = new EventMessageHandler(idOrEvent);
+          handler.handle(ws, this.#connections);
           break;
         }
         case "REQ": {
           if (typeof idOrEvent !== "string" || typeof filter !== "object") {
             return;
           }
-          storeSubscription(idOrEvent, filter);
           const handler = new ReqMessageHandler(idOrEvent, filter);
-          handler.handle(ws);
+          handler.handle(ws, this.#connections, storeConnection);
           break;
         }
         case "CLOSE": {
           if (typeof idOrEvent !== "string") {
             return;
           }
-          const handler = new CloseMessageHandler(idOrEvent, getConnections);
-          handler.handle(ws);
+          const handler = new CloseMessageHandler(idOrEvent);
+          handler.handle(ws, this.#connections, storeConnection);
           break;
         }
         case "AUTH": {
           if (typeof idOrEvent !== "object") {
             return;
           }
-          const handler = new AuthMessageHandler(idOrEvent, this.#connections);
-          handler.handle(ws);
+          const handler = new AuthMessageHandler(idOrEvent);
+          handler.handle(ws, this.#connections, storeConnection);
           break;
         }
         default: {

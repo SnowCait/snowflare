@@ -7,6 +7,7 @@ export type Connection = {
   auth?: Auth.Session;
   subscriptions: Subscriptions;
 };
+export type Connections = Map<WebSocket, Connection>;
 
 export function errorConnectionNotFound() {
   console.error({ message: "connection is undefined" });
