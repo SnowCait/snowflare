@@ -28,8 +28,7 @@ export class ReqMessageHandler implements MessageHandler {
 
     const { subscriptions } = connection;
     subscriptions.set(this.#subscriptionId, this.#filter);
-    const newConnection = { ...connection, subscriptions };
-    storeConnection(newConnection);
+    storeConnection({ ...connection, subscriptions });
 
     ws.send(JSON.stringify(["EOSE", this.#subscriptionId]));
   }

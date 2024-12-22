@@ -15,14 +15,14 @@ export class Relay extends DurableObject {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
 
-    const restoreSubscriptions = () => {
+    const restoreConnections = () => {
       for (const ws of this.ctx.getWebSockets()) {
         const connections = ws.deserializeAttachment();
         this.#connections.set(ws, connections);
       }
     };
 
-    restoreSubscriptions();
+    restoreConnections();
   }
 
   fetch(request: Request): Response | Promise<Response> {
