@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { Event, Filter } from "nostr-tools";
 import { Env } from "hono";
-import { Connection } from "./connection";
+import { Connection, errorConnectionNotFound } from "./connection";
 import { nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { EventMessageHandler } from "./message/handler/event";
@@ -25,7 +25,7 @@ export class Relay extends DurableObject {
     restoreSubscriptions();
   }
 
-  fetch(): Response | Promise<Response> {
+  fetch(request: Request): Response | Promise<Response> {
     const webSocketPair = new WebSocketPair();
     const { 0: client, 1: server } = webSocketPair;
     this.ctx.acceptWebSocket(server);
@@ -33,6 +33,7 @@ export class Relay extends DurableObject {
     if (nip11.limitation.auth_required) {
       const challenge = sendAuthChallenge(server);
       const connection = {
+        url: this.convertToWebSocketUrl(request.url),
         auth: {
           challenge,
           challengedAt: Date.now(),
@@ -42,7 +43,10 @@ export class Relay extends DurableObject {
       this.#connections.set(server, connection);
       server.serializeAttachment(connection);
     } else {
-      const connection = { subscriptions: new Map() } satisfies Connection;
+      const connection = {
+        url: this.convertToWebSocketUrl(request.url),
+        subscriptions: new Map(),
+      } satisfies Connection;
       this.#connections.set(server, connection);
       server.serializeAttachment(connection);
     }
@@ -51,6 +55,12 @@ export class Relay extends DurableObject {
       status: 101,
       webSocket: client,
     });
+  }
+
+  private convertToWebSocketUrl(url: string): string {
+    const u = new URL(url);
+    u.protocol = u.protocol === "http:" ? "ws:" : "wss:";
+    return u.href;
   }
 
   webSocketMessage(
@@ -71,7 +81,7 @@ export class Relay extends DurableObject {
     ): void => {
       const connection = this.#connections.get(ws);
       if (connection === undefined) {
-        console.error({ message: "connection is undefined" });
+        errorConnectionNotFound();
         return;
       } else {
         const { subscriptions } = connection;
@@ -122,7 +132,7 @@ export class Relay extends DurableObject {
           if (typeof idOrEvent !== "object") {
             return;
           }
-          const handler = new AuthMessageHandler(idOrEvent);
+          const handler = new AuthMessageHandler(idOrEvent, this.#connections);
           handler.handle(ws);
           break;
         }

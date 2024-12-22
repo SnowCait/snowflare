@@ -1,5 +1,6 @@
 import { Event } from "nostr-tools";
 import { authTimeout } from "./config";
+import { normalizeURL } from "nostr-tools/utils";
 
 export namespace Auth {
   export class Challenge {
@@ -7,7 +8,7 @@ export namespace Auth {
       return crypto.randomUUID();
     }
 
-    static validate(event: Event, auth: Session): boolean {
+    static validate(event: Event, auth: Session, url: string): boolean {
       if (event.kind !== 22242) {
         return false;
       }
@@ -19,10 +20,7 @@ export namespace Auth {
         return false;
       }
       const relay = event.tags.find(([t]) => t === "relay")?.at(1);
-      if (
-        relay ===
-        undefined /* TODO: || normalizeURL(relay) !== normalizeURL(url) */
-      ) {
+      if (relay === undefined || normalizeURL(relay) !== normalizeURL(url)) {
         return false;
       }
       return true;

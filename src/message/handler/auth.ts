@@ -2,13 +2,15 @@ import { Event } from "nostr-tools";
 import { MessageHandler } from "../handler";
 import { nip11 } from "../../config";
 import { Auth } from "../../auth";
-import { Connection } from "../../connection";
+import { Connection, errorConnectionNotFound } from "../../connection";
 
 export class AuthMessageHandler implements MessageHandler {
   #event: Event;
+  #connections: Map<WebSocket, Connection>;
 
-  constructor(event: Event) {
+  constructor(event: Event, connections: Map<WebSocket, Connection>) {
     this.#event = event;
+    this.#connections = connections;
   }
 
   handle(ws: WebSocket): void {
@@ -17,17 +19,23 @@ export class AuthMessageHandler implements MessageHandler {
       return;
     }
 
-    const session = ws.deserializeAttachment() as Connection;
+    const connection = this.#connections.get(ws);
+    if (connection === undefined) {
+      errorConnectionNotFound();
+      return;
+    }
     if (
-      session.auth === undefined ||
-      !Auth.Challenge.validate(this.#event, session.auth)
+      connection.auth === undefined ||
+      !Auth.Challenge.validate(this.#event, connection.auth, connection.url)
     ) {
       ws.send(JSON.stringify(["OK", this.#event.id, false, "invalid: auth"]));
       return;
     }
 
-    session.auth.pubkey = this.#event.pubkey;
-    ws.serializeAttachment(session);
+    connection.auth.pubkey = this.#event.pubkey;
+
+    this.#connections.set(ws, connection);
+    ws.serializeAttachment(connection);
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
   }
 }
