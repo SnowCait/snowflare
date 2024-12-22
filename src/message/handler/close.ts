@@ -1,20 +1,24 @@
-import { Subscriptions } from "../../subscriptions";
+import { Connection } from "../../connection";
 import { MessageHandler } from "../handler";
 
 export class CloseMessageHandler implements MessageHandler {
   #subscriptionId: string;
-  #getSubscriptions: () => Map<WebSocket, Subscriptions>;
+  #getConnections: () => Map<WebSocket, Connection>;
 
   constructor(
     subscriptionId: string,
-    getSubscriptions: () => Map<WebSocket, Subscriptions>,
+    getConnections: () => Map<WebSocket, Connection>,
   ) {
     this.#subscriptionId = subscriptionId;
-    this.#getSubscriptions = getSubscriptions;
+    this.#getConnections = getConnections;
   }
 
   handle(ws: WebSocket) {
-    const subscriptions = this.#getSubscriptions();
-    subscriptions.get(ws)?.delete(this.#subscriptionId);
+    const connection = this.#getConnections().get(ws);
+    if (connection === undefined) {
+      return;
+    }
+    connection.subscriptions.delete(this.#subscriptionId);
+    ws.serializeAttachment(connection);
   }
 }

@@ -1,0 +1,37 @@
+import { Event } from "nostr-tools";
+import { authTimeout } from "./config";
+
+export namespace Auth {
+  export class Challenge {
+    static generate(): string {
+      return crypto.randomUUID();
+    }
+
+    static validate(event: Event, auth: Session): boolean {
+      if (event.kind !== 22242) {
+        return false;
+      }
+      if (auth.challengedAt + authTimeout * 1000 < Date.now()) {
+        return false;
+      }
+      const challenge = event.tags.find(([t]) => t === "challenge")?.at(1);
+      if (challenge !== auth.challenge) {
+        return false;
+      }
+      const relay = event.tags.find(([t]) => t === "relay")?.at(1);
+      if (
+        relay ===
+        undefined /* TODO: || normalizeURL(relay) !== normalizeURL(url) */
+      ) {
+        return false;
+      }
+      return true;
+    }
+  }
+
+  export type Session = {
+    challenge: string;
+    challengedAt: number;
+    pubkey?: string;
+  };
+}

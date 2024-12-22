@@ -2,18 +2,20 @@ import { DurableObject } from "cloudflare:workers";
 import { MessageHandlerFactory } from "./message/factory";
 import { Filter } from "nostr-tools";
 import { Env } from "hono";
-import { Subscriptions } from "./subscriptions";
+import { Connection } from "./connection";
+import { nip11 } from "./config";
+import { sendAuthChallenge } from "./message/sender/auth";
 
 export class Relay extends DurableObject {
-  #subscriptions = new Map<WebSocket, Subscriptions>();
+  #connections = new Map<WebSocket, Connection>();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
 
     const restoreSubscriptions = () => {
       for (const ws of this.ctx.getWebSockets()) {
-        const subscriptions = ws.deserializeAttachment();
-        this.#subscriptions.set(ws, new Map(subscriptions));
+        const connections = ws.deserializeAttachment();
+        this.#connections.set(ws, connections);
       }
     };
 
@@ -24,6 +26,24 @@ export class Relay extends DurableObject {
     const webSocketPair = new WebSocketPair();
     const { 0: client, 1: server } = webSocketPair;
     this.ctx.acceptWebSocket(server);
+
+    if (nip11.limitation.auth_required) {
+      const challenge = sendAuthChallenge(server);
+      const connection = {
+        auth: {
+          challenge,
+          challengedAt: Date.now(),
+        },
+        subscriptions: new Map(),
+      } satisfies Connection;
+      this.#connections.set(server, connection);
+      server.serializeAttachment(connection);
+    } else {
+      const connection = { subscriptions: new Map() } satisfies Connection;
+      this.#connections.set(server, connection);
+      server.serializeAttachment(connection);
+    }
+
     return new Response(null, {
       status: 101,
       webSocket: client,
@@ -42,24 +62,27 @@ export class Relay extends DurableObject {
       subscriptionId: string,
       filter: Filter,
     ): void => {
-      const subscriptions = this.#subscriptions.get(ws);
-      if (subscriptions === undefined) {
-        this.#subscriptions.set(ws, new Map([[subscriptionId, filter]]));
+      const connection = this.#connections.get(ws);
+      if (connection === undefined) {
+        console.error({ message: "connection is undefined" });
+        return;
       } else {
+        const { subscriptions } = connection;
         subscriptions.set(subscriptionId, filter);
-        this.#subscriptions.set(ws, subscriptions);
-        ws.serializeAttachment(subscriptions);
+        const newConnection = { ...connection, subscriptions };
+        this.#connections.set(ws, newConnection);
+        ws.serializeAttachment(newConnection);
       }
     };
 
-    const getSubscriptions = (): Map<WebSocket, Subscriptions> => {
-      return this.#subscriptions;
+    const getConnections = (): Map<WebSocket, Connection> => {
+      return this.#connections;
     };
 
     const handler = MessageHandlerFactory.create(
       message,
       storeSubscription,
-      getSubscriptions,
+      getConnections,
     );
     handler?.handle(ws);
   }

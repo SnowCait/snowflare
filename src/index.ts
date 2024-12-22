@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { Relay } from "./relay";
-import defaultConfig from "../config/default";
-import overrideConfig from "../config/override";
+import { nip11 } from "./config";
 
 type Bindings = {
   RELAY: DurableObjectNamespace<Relay>;
@@ -16,7 +15,7 @@ app.get("/", (c) => {
     return stub.fetch(c.req.raw);
   } else if (c.req.header("Accept") === "application/nostr+json") {
     c.header("Access-Control-Allow-Origin", "*");
-    return c.json({ ...defaultConfig.nip11, ...overrideConfig.nip11 });
+    return c.json(nip11);
   } else {
     return c.text("Hello Hono!");
   }

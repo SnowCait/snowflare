@@ -7,8 +7,12 @@ export default {
     icon: "",
     pubkey: "",
     contact: "",
-    supported_nips: [1, 11],
+    supported_nips: [1, 11, 42],
     software: "https://github.com/SnowCait/snowflare",
     version: "0.1.0",
+    limitation: {
+      auth_required: true,
+    },
   },
+  auth_timeout: 600,
 } as const satisfies Config;

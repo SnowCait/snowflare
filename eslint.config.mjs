@@ -9,6 +9,11 @@ export default [
   { languageOptions: { globals: globals.browser } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
+  ...tseslint.config({
+    rules: {
+      "@typescript-eslint/no-namespace": "off",
+    },
+  }),
   { ignores: [".wrangler/"] },
   eslintConfigPrettier,
 ];
