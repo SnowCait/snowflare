@@ -1,10 +1,13 @@
 import { DurableObject } from "cloudflare:workers";
-import { MessageHandlerFactory } from "./message/factory";
-import { Filter } from "nostr-tools";
+import { Event, Filter } from "nostr-tools";
 import { Env } from "hono";
 import { Connection } from "./connection";
 import { nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
+import { EventMessageHandler } from "./message/handler/event";
+import { ReqMessageHandler } from "./message/handler/req";
+import { CloseMessageHandler } from "./message/handler/close";
+import { AuthMessageHandler } from "./message/handler/auth";
 
 export class Relay extends DurableObject {
   #connections = new Map<WebSocket, Connection>();
@@ -58,6 +61,10 @@ export class Relay extends DurableObject {
       return;
     }
 
+    this.handleMessage(ws, message);
+  }
+
+  private handleMessage(ws: WebSocket, message: string): void {
     const storeSubscription = (
       subscriptionId: string,
       filter: Filter,
@@ -79,11 +86,52 @@ export class Relay extends DurableObject {
       return this.#connections;
     };
 
-    const handler = MessageHandlerFactory.create(
-      message,
-      storeSubscription,
-      getConnections,
-    );
-    handler?.handle(ws);
+    try {
+      const [type, idOrEvent, filter] = JSON.parse(message) as [
+        string,
+        string | Event,
+        Filter,
+      ];
+      switch (type) {
+        case "EVENT": {
+          if (typeof idOrEvent !== "object") {
+            return;
+          }
+          const handler = new EventMessageHandler(idOrEvent, getConnections);
+          handler.handle(ws);
+          break;
+        }
+        case "REQ": {
+          if (typeof idOrEvent !== "string" || typeof filter !== "object") {
+            return;
+          }
+          storeSubscription(idOrEvent, filter);
+          const handler = new ReqMessageHandler(idOrEvent, filter);
+          handler.handle(ws);
+          break;
+        }
+        case "CLOSE": {
+          if (typeof idOrEvent !== "string") {
+            return;
+          }
+          const handler = new CloseMessageHandler(idOrEvent, getConnections);
+          handler.handle(ws);
+          break;
+        }
+        case "AUTH": {
+          if (typeof idOrEvent !== "object") {
+            return;
+          }
+          const handler = new AuthMessageHandler(idOrEvent);
+          handler.handle(ws);
+          break;
+        }
+        default: {
+          return;
+        }
+      }
+    } catch {
+      return;
+    }
   }
 }
