@@ -1,13 +1,9 @@
 import { DurableObject } from "cloudflare:workers";
-import { Event, Filter } from "nostr-tools";
 import { Env } from "hono";
 import { Connection } from "./connection";
 import { nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
-import { EventMessageHandler } from "./message/handler/event";
-import { ReqMessageHandler } from "./message/handler/req";
-import { CloseMessageHandler } from "./message/handler/close";
-import { AuthMessageHandler } from "./message/handler/auth";
+import { MessageHandlerFactory } from "./message/factory";
 
 export class Relay extends DurableObject {
   #connections = new Map<WebSocket, Connection>();
@@ -71,60 +67,21 @@ export class Relay extends DurableObject {
       return;
     }
 
-    this.handleMessage(ws, message);
-  }
-
-  private handleMessage(ws: WebSocket, message: string): void {
     const storeConnection = (connection: Connection): void => {
       this.#connections.set(ws, connection);
       ws.serializeAttachment(connection);
     };
 
-    try {
-      const [type, idOrEvent, filter] = JSON.parse(message) as [
-        string,
-        string | Event,
-        Filter,
-      ];
-      switch (type) {
-        case "EVENT": {
-          if (typeof idOrEvent !== "object") {
-            return;
-          }
-          const handler = new EventMessageHandler(idOrEvent);
-          handler.handle(ws, this.#connections);
-          break;
-        }
-        case "REQ": {
-          if (typeof idOrEvent !== "string" || typeof filter !== "object") {
-            return;
-          }
-          const handler = new ReqMessageHandler(idOrEvent, filter);
-          handler.handle(ws, this.#connections, storeConnection);
-          break;
-        }
-        case "CLOSE": {
-          if (typeof idOrEvent !== "string") {
-            return;
-          }
-          const handler = new CloseMessageHandler(idOrEvent);
-          handler.handle(ws, this.#connections, storeConnection);
-          break;
-        }
-        case "AUTH": {
-          if (typeof idOrEvent !== "object") {
-            return;
-          }
-          const handler = new AuthMessageHandler(idOrEvent);
-          handler.handle(ws, this.#connections, storeConnection);
-          break;
-        }
-        default: {
-          return;
-        }
-      }
-    } catch {
-      return;
-    }
+    const handler = MessageHandlerFactory.create(message);
+    handler?.handle(ws, this.#connections, storeConnection);
+  }
+
+  webSocketClose(
+    ws: WebSocket,
+    code: number,
+    reason: string,
+    wasClean: boolean,
+  ): void | Promise<void> {
+    console.debug("[ws close]", code, reason, wasClean);
   }
 }
