@@ -21,7 +21,7 @@ export class Relay extends DurableObject {
     restoreConnections();
   }
 
-  fetch(request: Request): Response | Promise<Response> {
+  fetch(request: Request): Response {
     const webSocketPair = new WebSocketPair();
     const { 0: client, 1: server } = webSocketPair;
     this.ctx.acceptWebSocket(server);
@@ -29,7 +29,7 @@ export class Relay extends DurableObject {
     if (nip11.limitation.auth_required) {
       const challenge = sendAuthChallenge(server);
       const connection = {
-        url: this.convertToWebSocketUrl(request.url),
+        url: this.#convertToWebSocketUrl(request.url),
         auth: {
           challenge,
           challengedAt: Date.now(),
@@ -40,7 +40,7 @@ export class Relay extends DurableObject {
       server.serializeAttachment(connection);
     } else {
       const connection = {
-        url: this.convertToWebSocketUrl(request.url),
+        url: this.#convertToWebSocketUrl(request.url),
         subscriptions: new Map(),
       } satisfies Connection;
       this.#connections.set(server, connection);
@@ -53,7 +53,7 @@ export class Relay extends DurableObject {
     });
   }
 
-  private convertToWebSocketUrl(url: string): string {
+  #convertToWebSocketUrl(url: string): string {
     const u = new URL(url);
     u.protocol = u.protocol === "http:" ? "ws:" : "wss:";
     return u.href;

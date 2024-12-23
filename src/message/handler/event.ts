@@ -38,10 +38,10 @@ export class EventMessageHandler implements MessageHandler {
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 
-    this.broadcast(connections);
+    this.#broadcast(connections);
   }
 
-  private broadcast(connections: Connections) {
+  #broadcast(connections: Connections): void {
     for (const [ws, { subscriptions }] of connections) {
       for (const [id, filter] of subscriptions) {
         if (matchFilter(filter, this.#event)) {
