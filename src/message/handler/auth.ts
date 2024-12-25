@@ -7,6 +7,7 @@ import {
   Connections,
   errorConnectionNotFound,
 } from "../../connection";
+import { Register } from "../../register";
 
 export class AuthMessageHandler implements MessageHandler {
   #event: Event;
@@ -15,11 +16,12 @@ export class AuthMessageHandler implements MessageHandler {
     this.#event = event;
   }
 
-  handle(
+  async handle(
     ws: WebSocket,
     connections: Connections,
     storeConnection: (connection: Connection) => void,
-  ): void {
+    register: DurableObjectStub<Register>,
+  ): Promise<void> {
     if (!nip11.limitation.auth_required) {
       ws.send(JSON.stringify(["NOTICE", "unsupported: auth"]));
       return;
@@ -34,7 +36,21 @@ export class AuthMessageHandler implements MessageHandler {
       connection.auth === undefined ||
       !Auth.Challenge.validate(this.#event, connection.auth, connection.url)
     ) {
-      ws.send(JSON.stringify(["OK", this.#event.id, false, "invalid: auth"]));
+      ws.send(
+        JSON.stringify(["OK", this.#event.id, false, "auth-required: invalid"]),
+      );
+      return;
+    }
+
+    if (!(await register.has(this.#event.pubkey))) {
+      ws.send(
+        JSON.stringify([
+          "OK",
+          this.#event.id,
+          false,
+          "restricted: required to register",
+        ]),
+      );
       return;
     }
 

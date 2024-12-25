@@ -1,14 +1,16 @@
 import { DurableObject } from "cloudflare:workers";
-import { Env } from "hono";
 import { Connection } from "./connection";
 import { nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { MessageHandlerFactory } from "./message/factory";
+import { Bindings } from "./app";
+import { Register } from "./register";
 
-export class Relay extends DurableObject {
+export class Relay extends DurableObject<Bindings> {
   #connections = new Map<WebSocket, Connection>();
+  #register: DurableObjectStub<Register>;
 
-  constructor(ctx: DurableObjectState, env: Env) {
+  constructor(ctx: DurableObjectState, env: Bindings) {
     super(ctx, env);
 
     const restoreConnections = () => {
@@ -19,6 +21,9 @@ export class Relay extends DurableObject {
     };
 
     restoreConnections();
+
+    const id = this.env.REGISTER.idFromName("register");
+    this.#register = env.REGISTER.get(id);
   }
 
   fetch(request: Request): Response {
@@ -73,7 +78,7 @@ export class Relay extends DurableObject {
     };
 
     const handler = MessageHandlerFactory.create(message);
-    handler?.handle(ws, this.#connections, storeConnection);
+    handler?.handle(ws, this.#connections, storeConnection, this.#register);
   }
 
   webSocketClose(

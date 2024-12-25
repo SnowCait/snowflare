@@ -4,9 +4,11 @@ compatibility_date = "2024-12-18"
 
 compatibility_flags = [ "nodejs_compat" ]
 
-[[durable_objects.bindings]]
-class_name = "Relay"
-name = "RELAY"
+[durable_objects]
+bindings = [
+  { class_name = "Relay", name = "RELAY" },
+  { class_name = "Register", name = "REGISTER" }
+]
 
 [[migrations]]
 new_classes = ["Relay"]
