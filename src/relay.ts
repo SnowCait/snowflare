@@ -4,9 +4,12 @@ import { nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { MessageHandlerFactory } from "./message/factory";
 import { Bindings } from "./app";
+import { InMemoryEventRepository } from "./repository/in-memory/event";
 
 export class Relay extends DurableObject<Bindings> {
   #connections = new Map<WebSocket, Connection>();
+
+  #eventsRepository = new InMemoryEventRepository();
 
   constructor(ctx: DurableObjectState, env: Bindings) {
     super(ctx, env);
@@ -75,7 +78,10 @@ export class Relay extends DurableObject<Bindings> {
     const id = this.env.REGISTER.idFromName("register");
     const register = this.env.REGISTER.get(id);
 
-    const handler = MessageHandlerFactory.create(message);
+    const handler = MessageHandlerFactory.create(
+      message,
+      this.#eventsRepository,
+    );
     handler?.handle(ws, this.#connections, storeConnection, register);
   }
 

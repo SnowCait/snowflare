@@ -4,9 +4,13 @@ import { EventMessageHandler } from "./handler/event";
 import { ReqMessageHandler } from "./handler/req";
 import { CloseMessageHandler } from "./handler/close";
 import { AuthMessageHandler } from "./handler/auth";
+import { EventRepository } from "../repository/event";
 
 export class MessageHandlerFactory {
-  static create(message: string): MessageHandler | undefined {
+  static create(
+    message: string,
+    eventsRepository: EventRepository,
+  ): MessageHandler | undefined {
     try {
       const [type, idOrEvent, filter] = JSON.parse(message) as [
         string,
@@ -18,13 +22,13 @@ export class MessageHandlerFactory {
           if (typeof idOrEvent !== "object") {
             return;
           }
-          return new EventMessageHandler(idOrEvent);
+          return new EventMessageHandler(idOrEvent, eventsRepository);
         }
         case "REQ": {
           if (typeof idOrEvent !== "string" || typeof filter !== "object") {
             return;
           }
-          return new ReqMessageHandler(idOrEvent, filter);
+          return new ReqMessageHandler(idOrEvent, filter, eventsRepository);
         }
         case "CLOSE": {
           if (typeof idOrEvent !== "string") {

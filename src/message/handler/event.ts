@@ -2,12 +2,15 @@ import { Event, matchFilter, verifyEvent } from "nostr-tools";
 import { MessageHandler } from "../handler";
 import { Connections, errorConnectionNotFound } from "../../connection";
 import { nip11 } from "../../config";
+import { EventRepository } from "../../repository/event";
 
 export class EventMessageHandler implements MessageHandler {
   #event: Event;
+  #eventsRepository: EventRepository;
 
-  constructor(event: Event) {
+  constructor(event: Event, eventsRepository: EventRepository) {
     this.#event = event;
+    this.#eventsRepository = eventsRepository;
   }
 
   handle(ws: WebSocket, connections: Connections): void {
@@ -35,6 +38,8 @@ export class EventMessageHandler implements MessageHandler {
         return;
       }
     }
+
+    this.#eventsRepository.put(this.#event);
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 

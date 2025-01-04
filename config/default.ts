@@ -11,6 +11,7 @@ export default {
     software: "https://github.com/SnowCait/snowflare",
     version: "0.1.0",
     limitation: {
+      max_limit: 500,
       auth_required: true,
     },
   },
