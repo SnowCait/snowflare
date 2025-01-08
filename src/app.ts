@@ -10,3 +10,8 @@ export type Bindings = {
 export type Variables = {
   pubkey: string;
 };
+
+export type Env = {
+  Bindings: Bindings;
+  Variables: Variables;
+};

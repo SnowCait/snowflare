@@ -2,11 +2,11 @@ import { Hono } from "hono";
 import { Relay } from "./relay";
 import { nip11 } from "./config";
 import { Register } from "./register";
-import { Bindings, Variables } from "./app";
+import { Env } from "./app";
 import { HTTPException } from "hono/http-exception";
 import { nip98 } from "nostr-tools";
 
-const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+const app = new Hono<Env>();
 
 app.get("/", (c) => {
   if (c.req.header("Upgrade") === "websocket") {
