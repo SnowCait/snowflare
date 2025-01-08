@@ -39,7 +39,7 @@ export class EventMessageHandler implements MessageHandler {
       }
     }
 
-    this.#eventsRepository.put(this.#event);
+    this.#eventsRepository.save(this.#event);
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 

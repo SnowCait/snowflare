@@ -37,7 +37,7 @@ export class ReqMessageHandler implements MessageHandler {
     subscriptions.set(this.#subscriptionId, this.#filter);
     storeConnection({ ...connection, subscriptions });
 
-    const events = await this.#eventsRepository.list(this.#filter);
+    const events = await this.#eventsRepository.find(this.#filter);
     for (const event of events) {
       ws.send(JSON.stringify(["EVENT", this.#subscriptionId, event]));
     }

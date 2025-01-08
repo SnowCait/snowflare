@@ -4,15 +4,18 @@ import { nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { MessageHandlerFactory } from "./message/factory";
 import { Bindings } from "./app";
-import { InMemoryEventRepository } from "./repository/in-memory/event";
+import { KvD1EventRepository } from "./repository/kv/d1/event";
+import { EventRepository } from "./repository/event";
 
 export class Relay extends DurableObject<Bindings> {
   #connections = new Map<WebSocket, Connection>();
 
-  #eventsRepository = new InMemoryEventRepository();
+  #eventsRepository: EventRepository;
 
   constructor(ctx: DurableObjectState, env: Bindings) {
     super(ctx, env);
+
+    this.#eventsRepository = new KvD1EventRepository(env);
 
     const restoreConnections = () => {
       for (const ws of this.ctx.getWebSockets()) {

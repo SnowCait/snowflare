@@ -4,6 +4,7 @@ import { Relay } from "./relay";
 export type Bindings = {
   RELAY: DurableObjectNamespace<Relay>;
   REGISTER: DurableObjectNamespace<Register>;
+  events: KVNamespace;
 };
 
 export type Variables = {
