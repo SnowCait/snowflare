@@ -59,6 +59,12 @@ export class Relay extends DurableObject<Bindings> {
     });
   }
 
+  metrics(): { connections: number } {
+    const data = { connections: this.#connections.size };
+    console.log(data);
+    return data;
+  }
+
   #convertToWebSocketUrl(url: string): string {
     const u = new URL(url);
     u.protocol = u.protocol === "http:" ? "ws:" : "wss:";

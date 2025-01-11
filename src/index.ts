@@ -29,6 +29,13 @@ app.options("/", (c) => {
   });
 });
 
+app.get("/metrics", async (c) => {
+  const id = c.env.RELAY.idFromName("relay");
+  const stub = c.env.RELAY.get(id);
+  const metrics = await stub.metrics();
+  return c.json(metrics);
+});
+
 app.use("/register", async (c, next) => {
   const token = c.req.header("Authorization");
   if (token === undefined) {
