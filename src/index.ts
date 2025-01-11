@@ -5,6 +5,7 @@ import { Register } from "./register";
 import { Env } from "./app";
 import { HTTPException } from "hono/http-exception";
 import { nip98 } from "nostr-tools";
+import client from "./client";
 
 const app = new Hono<Env>();
 
@@ -17,7 +18,7 @@ app.get("/", (c) => {
     c.header("Access-Control-Allow-Origin", "*");
     return c.json(nip11);
   } else {
-    return c.text("Hello Hono!");
+    return client.fetch(c.req.raw);
   }
 });
 

@@ -1,8 +1,10 @@
 name = "snowflare"
 main = "src/index.ts"
 compatibility_date = "2024-12-18"
-
 compatibility_flags = [ "nodejs_compat" ]
+
+[assets]
+directory = "./public/"
 
 [durable_objects]
 bindings = [
