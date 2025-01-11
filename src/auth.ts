@@ -1,5 +1,5 @@
 import { Event } from "nostr-tools";
-import { authTimeout } from "./config";
+import { config } from "./config";
 import { normalizeURL } from "nostr-tools/utils";
 
 export namespace Auth {
@@ -12,7 +12,7 @@ export namespace Auth {
       if (event.kind !== 22242) {
         return false;
       }
-      if (auth.challengedAt + authTimeout * 1000 < Date.now()) {
+      if (auth.challengedAt + config.auth_timeout * 1000 < Date.now()) {
         return false;
       }
       const challenge = event.tags.find(([t]) => t === "challenge")?.at(1);

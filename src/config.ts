@@ -7,5 +7,5 @@ export type Config = {
   auth_timeout?: number;
 };
 
+export const config = { ...defaultConfig, ...overrideConfig };
 export const nip11 = { ...defaultConfig.nip11, ...overrideConfig.nip11 };
-export const authTimeout = { ...defaultConfig, ...overrideConfig }.auth_timeout;
