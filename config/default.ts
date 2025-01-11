@@ -16,4 +16,5 @@ export default {
     },
   },
   auth_timeout: 600,
+  default_limit: 50,
 } as const satisfies Config;
