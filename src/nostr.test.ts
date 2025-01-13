@@ -87,9 +87,11 @@ describe("validate filter", () => {
     expect(validateFilter({ until: -1 })).toBe(false);
   });
   it("limit", () => {
-    expect(validateFilter({ limit: 1 })).toBe(true);
-    expect(validateFilter({ limit: "" as any })).toBe(false); // eslint-disable-line @typescript-eslint/no-explicit-any
     expect(validateFilter({ limit: 0 })).toBe(false);
+    expect(validateFilter({ limit: 1 })).toBe(true);
+    expect(validateFilter({ limit: 500 })).toBe(true);
+    expect(validateFilter({ limit: 501 })).toBe(false);
+    expect(validateFilter({ limit: "" as any })).toBe(false); // eslint-disable-line @typescript-eslint/no-explicit-any
   });
   it("tags", () => {
     expect(validateFilter({ "#t": [] })).toBe(false);

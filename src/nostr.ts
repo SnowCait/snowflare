@@ -1,4 +1,5 @@
 import { Filter } from "nostr-tools";
+import { nip11 } from "./config";
 
 const hexRegExp = /^[0-9a-z]{64}$/;
 export const tagsFilterRegExp = /^#[a-zA-Z]$/;
@@ -69,7 +70,11 @@ export function validateFilter(filter: Filter): boolean {
 
   if (
     filter.limit !== undefined &&
-    !(Number.isInteger(filter.limit) && filter.limit > 0)
+    !(
+      Number.isInteger(filter.limit) &&
+      0 < filter.limit &&
+      filter.limit <= nip11.limitation.max_limit
+    )
   ) {
     return false;
   }
