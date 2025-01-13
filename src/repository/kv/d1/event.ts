@@ -2,7 +2,8 @@ import { Event, Filter } from "nostr-tools";
 import { EventRepository } from "../../event";
 import { Bindings } from "../../../app";
 import { nip11 } from "../../../config";
-import { hexRegExp, idsFilterKeys, reverseChronological } from "../../helper";
+import { reverseChronological } from "../../helper";
+import { idsFilterKeys } from "../../../nostr";
 
 export class KvD1EventRepository implements EventRepository {
   #env: Bindings;
@@ -35,20 +36,18 @@ export class KvD1EventRepository implements EventRepository {
 
   async #findByIds(ids: string[]): Promise<Event[]> {
     const events = await Promise.all(
-      ids
-        .filter((id) => hexRegExp.test(id))
-        .map(async (id) => {
-          try {
-            const json = await this.#env.events.get(id);
-            if (json === null) {
-              return null;
-            }
-            return JSON.parse(json) as Event;
-          } catch (error) {
-            console.error("[json parse failed]", error);
+      ids.map(async (id) => {
+        try {
+          const json = await this.#env.events.get(id);
+          if (json === null) {
             return null;
           }
-        }),
+          return JSON.parse(json) as Event;
+        } catch (error) {
+          console.error("[json parse failed]", error);
+          return null;
+        }
+      }),
     );
     return events
       .filter((event) => event !== null)

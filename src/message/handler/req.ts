@@ -6,6 +6,7 @@ import {
   errorConnectionNotFound,
 } from "../../connection";
 import { EventRepository } from "../../repository/event";
+import { validateFilter } from "../../nostr";
 
 export class ReqMessageHandler implements MessageHandler {
   #subscriptionId: string;
@@ -30,6 +31,12 @@ export class ReqMessageHandler implements MessageHandler {
     const connection = connections.get(ws);
     if (connection === undefined) {
       errorConnectionNotFound();
+      return;
+    }
+
+    if (!validateFilter(this.#filter)) {
+      console.debug("[invalid filter]", this.#filter);
+      ws.send(JSON.stringify(["NOTICE", "invalid: filter"]));
       return;
     }
 
