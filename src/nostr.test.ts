@@ -86,7 +86,7 @@ describe("validate filter", () => {
     expect(validateFilter({ until: "" as any })).toBe(false); // eslint-disable-line @typescript-eslint/no-explicit-any
     expect(validateFilter({ until: -1 })).toBe(false);
   });
-  it("since", () => {
+  it("limit", () => {
     expect(validateFilter({ limit: 1 })).toBe(true);
     expect(validateFilter({ limit: "" as any })).toBe(false); // eslint-disable-line @typescript-eslint/no-explicit-any
     expect(validateFilter({ limit: 0 })).toBe(false);
