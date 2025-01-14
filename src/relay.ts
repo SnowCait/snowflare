@@ -1,11 +1,11 @@
 import { DurableObject } from "cloudflare:workers";
 import { Connection } from "./connection";
-import { nip11 } from "./config";
+import { config, nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { MessageHandlerFactory } from "./message/factory";
 import { Bindings } from "./app";
-import { KvD1EventRepository } from "./repository/kv/d1/event";
 import { EventRepository } from "./repository/event";
+import { RepositoryFactory } from "./repository/factory";
 
 export class Relay extends DurableObject<Bindings> {
   #connections = new Map<WebSocket, Connection>();
@@ -15,7 +15,10 @@ export class Relay extends DurableObject<Bindings> {
   constructor(ctx: DurableObjectState, env: Bindings) {
     super(ctx, env);
 
-    this.#eventsRepository = new KvD1EventRepository(env);
+    this.#eventsRepository = RepositoryFactory.create(
+      config.repository_type,
+      this.env,
+    );
 
     const restoreConnections = () => {
       for (const ws of this.ctx.getWebSockets()) {

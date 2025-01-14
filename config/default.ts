@@ -17,4 +17,5 @@ export default {
   },
   auth_timeout: 600,
   default_limit: 50,
+  repository_type: "kv-d1",
 } as const satisfies Config;
