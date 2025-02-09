@@ -20,24 +20,14 @@ tag = "v1"
 new_classes = ["Register"]
 tag = "v2"
 
-# [vars]
-# MY_VAR = "my-variable"
-
 [[kv_namespaces]]
 binding = "events"
 id = "%KV_ID%"
 
-# [[r2_buckets]]
-# binding = "MY_BUCKET"
-# bucket_name = "my-bucket"
-
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "my-database"
-# database_id = ""
-
-# [ai]
-# binding = "AI"
+[[d1_databases]]
+binding = "DB"
+database_name = "snowflare-events"
+database_id = "%DB_ID%"
 
 [observability]
 enabled = true

@@ -13,7 +13,7 @@ export class EventMessageHandler implements MessageHandler {
     this.#eventsRepository = eventsRepository;
   }
 
-  handle(ws: WebSocket, connections: Connections): void {
+  async handle(ws: WebSocket, connections: Connections): Promise<void> {
     if (!verifyEvent(this.#event)) {
       ws.send(JSON.stringify(["NOTICE", "invalid: event"]));
       return;
@@ -39,7 +39,7 @@ export class EventMessageHandler implements MessageHandler {
       }
     }
 
-    this.#eventsRepository.save(this.#event);
+    await this.#eventsRepository.save(this.#event);
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 

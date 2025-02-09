@@ -74,10 +74,10 @@ export class Relay extends DurableObject<Bindings> {
     return u.href;
   }
 
-  webSocketMessage(
+  async webSocketMessage(
     ws: WebSocket,
     message: string | ArrayBuffer,
-  ): void | Promise<void> {
+  ): Promise<void> {
     if (message instanceof ArrayBuffer) {
       return;
     }
@@ -94,7 +94,7 @@ export class Relay extends DurableObject<Bindings> {
       message,
       this.#eventsRepository,
     );
-    handler?.handle(ws, this.#connections, storeConnection, register);
+    await handler?.handle(ws, this.#connections, storeConnection, register);
   }
 
   webSocketClose(

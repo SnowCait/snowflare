@@ -2,12 +2,40 @@
 
 Nostr relay running on Cloudflare Workers.
 
+## Install
+
+```shell
+npm install
+```
+
+### Repository: In memory
+
+Nothing to do.
+
+### Repository: KV + D1
+
+```shell
+npx wrangler kv namespace create events
+npx wrangler d1 create snowflare-events
+```
+
+#### Local
+
+```shell
+npx wrangler d1 execute snowflare-events --local --file=./src/repository/kv/d1/schema.create.sql
+```
+
+#### Production
+
+```shell
+npx wrangler d1 execute snowflare-events --file=./src/repository/kv/d1/schema.create.sql
+```
+
 ## Development
 
 Copy `config/default.ts` to `config/override.ts` and override them.
 
-```
-npm install
+```shell
 npm run dev
 ```
 
@@ -15,6 +43,6 @@ npm run dev
 
 Cloudflare Workers Paid plan is required for [Durable Objects](https://developers.cloudflare.com/durable-objects/).
 
-```
+```shell
 npm run deploy
 ```
