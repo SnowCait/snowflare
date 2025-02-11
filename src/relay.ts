@@ -62,10 +62,19 @@ export class Relay extends DurableObject<Bindings> {
     });
   }
 
-  metrics(): { connections: number } {
-    const data = { connections: this.#connections.size };
-    console.log(data);
-    return data;
+  async metrics(): Promise<{
+    connections: number;
+    subscriptions: number;
+    filters: number;
+  }> {
+    const filters = await this.ctx.storage.list();
+    return {
+      connections: this.#connections.size,
+      subscriptions: [...this.#connections]
+        .map(([, connection]) => connection.subscriptions.size)
+        .reduce((sum, value) => sum + value, 0),
+      filters: filters.size,
+    };
   }
 
   #convertToWebSocketUrl(url: string): string {
