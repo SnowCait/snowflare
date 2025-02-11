@@ -17,6 +17,7 @@ export class AuthMessageHandler implements MessageHandler {
   }
 
   async handle(
+    _: DurableObjectState,
     ws: WebSocket,
     connections: Connections,
     storeConnection: (connection: Connection) => void,

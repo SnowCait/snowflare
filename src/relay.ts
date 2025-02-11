@@ -94,7 +94,13 @@ export class Relay extends DurableObject<Bindings> {
       message,
       this.#eventsRepository,
     );
-    await handler?.handle(ws, this.#connections, storeConnection, register);
+    await handler?.handle(
+      this.ctx,
+      ws,
+      this.#connections,
+      storeConnection,
+      register,
+    );
   }
 
   webSocketClose(

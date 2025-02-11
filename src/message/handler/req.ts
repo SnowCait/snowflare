@@ -24,6 +24,7 @@ export class ReqMessageHandler implements MessageHandler {
   }
 
   async handle(
+    ctx: DurableObjectState,
     ws: WebSocket,
     connections: Connections,
     storeConnection: (connection: Connection) => void,
@@ -40,8 +41,10 @@ export class ReqMessageHandler implements MessageHandler {
       return;
     }
 
+    const key = crypto.randomUUID();
+    await ctx.storage.put(key, this.#filter);
     const { subscriptions } = connection;
-    subscriptions.set(this.#subscriptionId, this.#filter);
+    subscriptions.set(this.#subscriptionId, key);
     storeConnection({ ...connection, subscriptions });
 
     const events = await this.#eventsRepository.find(this.#filter);

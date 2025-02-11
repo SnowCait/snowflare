@@ -1,11 +1,12 @@
-import { Filter } from "nostr-tools";
 import { Auth } from "./auth";
 
-export type Subscriptions = Map<string, Filter>;
+type SubscriptionId = string;
+type SubscriptionKey = string;
+
 export type Connection = {
   url: string;
   auth?: Auth.Session;
-  subscriptions: Subscriptions;
+  subscriptions: Map<SubscriptionId, SubscriptionKey>;
 };
 export type Connections = Map<WebSocket, Connection>;
 

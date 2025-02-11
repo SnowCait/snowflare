@@ -1,4 +1,4 @@
-import { Event, matchFilter, verifyEvent } from "nostr-tools";
+import { Event, Filter, matchFilter, verifyEvent } from "nostr-tools";
 import { MessageHandler } from "../handler";
 import { Connections, errorConnectionNotFound } from "../../connection";
 import { nip11 } from "../../config";
@@ -13,7 +13,11 @@ export class EventMessageHandler implements MessageHandler {
     this.#eventsRepository = eventsRepository;
   }
 
-  async handle(ws: WebSocket, connections: Connections): Promise<void> {
+  async handle(
+    ctx: DurableObjectState,
+    ws: WebSocket,
+    connections: Connections,
+  ): Promise<void> {
     if (!verifyEvent(this.#event)) {
       ws.send(JSON.stringify(["NOTICE", "invalid: event"]));
       return;
@@ -43,13 +47,20 @@ export class EventMessageHandler implements MessageHandler {
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 
-    this.#broadcast(connections);
+    await this.#broadcast(ctx, connections);
   }
 
-  #broadcast(connections: Connections): void {
+  async #broadcast(
+    ctx: DurableObjectState,
+    connections: Connections,
+  ): Promise<void> {
+    const filters = await ctx.storage.list<Filter>();
     for (const [ws, { subscriptions }] of connections) {
-      for (const [id, filter] of subscriptions) {
-        if (matchFilter(filter, this.#event)) {
+      for (const [id, key] of subscriptions) {
+        const filter = filters.get(key);
+        if (filter === undefined) {
+          await ctx.storage.delete(key);
+        } else if (matchFilter(filter, this.#event)) {
           ws.send(JSON.stringify(["EVENT", id, this.#event]));
         }
       }
