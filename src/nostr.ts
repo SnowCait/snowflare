@@ -7,7 +7,7 @@ export const tagsFilterRegExp = /^#[a-zA-Z]$/;
 export const idsFilterKeys: string[] = ["ids", "limit"] satisfies Array<
   keyof Pick<Filter, "ids" | "limit">
 >;
-const nonTagKeys: string[] = [
+export const nonTagKeys: string[] = [
   "ids",
   "authors",
   "kinds",
@@ -17,6 +17,13 @@ const nonTagKeys: string[] = [
 ] satisfies Array<
   keyof Pick<Filter, "ids" | "authors" | "kinds" | "since" | "until" | "limit">
 >;
+export const hexTagKeys: string[] = [
+  "#e",
+  "#E",
+  "#p",
+  "#P",
+  "#q",
+] satisfies Array<keyof Pick<Filter, "#e" | "#E" | "#p" | "#P" | "#q">>;
 
 export function validateFilter(filter: Filter): boolean {
   if (
@@ -88,7 +95,7 @@ export function validateFilter(filter: Filter): boolean {
           Array.isArray(value) &&
           value.length > 0 &&
           value.every((v) => typeof v === "string" && v !== "") &&
-          (!["#e", "#E", "#p", "#P", "#q"].includes(key) ||
+          (!hexTagKeys.includes(key) ||
             value.every((v) => typeof v === "string" && hexRegExp.test(v))),
       )
   ) {
