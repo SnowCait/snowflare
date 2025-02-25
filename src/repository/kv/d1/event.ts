@@ -3,7 +3,7 @@ import { EventRepository } from "../../event";
 import { Bindings } from "../../../app";
 import { config, nip11 } from "../../../config";
 import { reverseChronological } from "../../helper";
-import { idsFilterKeys } from "../../../nostr";
+import { hexTagKeys, idsFilterKeys, tagsFilterRegExp } from "../../../nostr";
 
 export class KvD1EventRepository implements EventRepository {
   #env: Bindings;
@@ -22,11 +22,27 @@ export class KvD1EventRepository implements EventRepository {
   }
 
   async #saveToD1(event: Event): Promise<void> {
-    await this.#env.DB.prepare(
-      "INSERT INTO events VALUES (UNHEX(?), UNHEX(?), ?, ?)",
-    )
-      .bind(event.id, event.pubkey, event.kind, event.created_at)
-      .run();
+    const statements: D1PreparedStatement[] = [];
+    statements.push(
+      this.#env.DB.prepare(
+        "INSERT INTO events VALUES (UNHEX(?), UNHEX(?), ?, ?)",
+      ).bind(event.id, event.pubkey, event.kind, event.created_at),
+    );
+    for (const [name, value] of event.tags.filter(
+      ([name, value]) =>
+        tagsFilterRegExp.test(`#${name}`) && typeof value === "string",
+    )) {
+      statements.push(
+        this.#env.DB.prepare(
+          "INSERT INTO tags VALUES (UNHEX(?), ?, ?, ? , ?)",
+        ).bind(event.id, event.kind, name, value, event.created_at),
+      );
+    }
+
+    console.debug("[save event]", event);
+
+    const result = await this.#env.DB.batch<void>(statements);
+    console.debug("[save result]", result);
   }
 
   async find(filter: Filter): Promise<Event[]> {
@@ -89,6 +105,43 @@ export class KvD1EventRepository implements EventRepository {
       wheres.push(`created_at <= ${filter.until}`);
     }
 
+    const tagsFilter = Object.entries(filter).filter(([key]) =>
+      key.startsWith("#"),
+    );
+    if (tagsFilter.length > 0) {
+      const tagsWheres: string[] = [];
+      for (const [key, values] of tagsFilter) {
+        // For type inference
+        if (
+          !Array.isArray(values) ||
+          !values.every((v) => typeof v === "string")
+        ) {
+          console.error("[logic error]", filter);
+          continue;
+        }
+
+        const uniqueValues = [...new Set(values)];
+        if (hexTagKeys.includes(key)) {
+          tagsWheres.push(
+            `(tags.name = "${key[1]}" AND tags.value IN (${uniqueValues.map((v) => `"${v}"`).join(",")}))`,
+          );
+        } else {
+          tagsWheres.push(
+            `(tags.name = "${key[1]}" AND tags.value IN (${uniqueValues.map(() => "?").join(",")}))`,
+          );
+          params.push(...uniqueValues);
+        }
+      }
+      wheres.push(
+        `EXISTS(SELECT 1 FROM tags WHERE events.id = tags.id AND (${tagsWheres.join(" AND ")}))`,
+      );
+    }
+
+    // D1 limit
+    if (params.length > 100) {
+      console.error("[too many bound parameters]", params.length, filter);
+    }
+
     const select = "SELECT LOWER(HEX(id)) as id FROM events";
     const orderBy = "ORDER BY created_at DESC";
     const limit = `LIMIT ${filter.limit ?? config.default_limit}`;
@@ -98,11 +151,13 @@ export class KvD1EventRepository implements EventRepository {
         ? [select, "WHERE", wheres.join(" AND "), orderBy, limit]
         : [select, orderBy, limit]
     ).join(" ");
+    console.debug("[find SQL]", query, JSON.stringify(params), filter);
 
-    const { results } = await this.#env.DB.prepare(query)
+    const result = await this.#env.DB.prepare(query)
       .bind(...params)
       .run<{ id: string }>();
+    console.debug("[find result]", result);
 
-    return this.#findByIds(results.map(({ id }) => id));
+    return this.#findByIds(result.results.map(({ id }) => id));
   }
 }

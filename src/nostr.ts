@@ -94,9 +94,8 @@ export function validateFilter(filter: Filter): boolean {
           tagsFilterRegExp.test(key) &&
           Array.isArray(value) &&
           value.length > 0 &&
-          value.every((v) => typeof v === "string" && v !== "") &&
-          (!hexTagKeys.includes(key) ||
-            value.every((v) => typeof v === "string" && hexRegExp.test(v))),
+          value.every((v) => typeof v === "string") &&
+          (!hexTagKeys.includes(key) || value.every((v) => hexRegExp.test(v))),
       )
   ) {
     return false;
