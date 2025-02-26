@@ -3,7 +3,13 @@ import { EventRepository } from "../../event";
 import { Bindings } from "../../../app";
 import { config, nip11 } from "../../../config";
 import { reverseChronological } from "../../helper";
-import { hexTagKeys, idsFilterKeys, tagsFilterRegExp } from "../../../nostr";
+import {
+  hexRegExp,
+  hexTagKeys,
+  idsFilterKeys,
+  tagsFilterRegExp,
+} from "../../../nostr";
+import { EventDeletion } from "nostr-tools/kinds";
 
 export class KvD1EventRepository implements EventRepository {
   #env: Bindings;
@@ -43,6 +49,40 @@ export class KvD1EventRepository implements EventRepository {
 
     const result = await this.#env.DB.batch<void>(statements);
     console.debug("[save result]", result);
+  }
+
+  async delete(event: Event): Promise<void> {
+    const ids = event.tags
+      .filter(([name, value]) => name === "e" && hexRegExp.test(value))
+      .map(([, id]) => id);
+    const uniqueIds = [...new Set(ids)];
+
+    const { results } = await this.#env.DB.prepare(
+      `
+      SELECT LOWER(HEX(id)) as id FROM events
+      WHERE
+        id IN (${uniqueIds.map((id) => `UNHEX("${id}")`).join(",")}) AND
+        pubkey = UNHEX("${event.pubkey}") AND
+        kind != ${EventDeletion}
+      `,
+    ).run<{ id: string }>();
+    const deleteIds = results.map(({ id }) => id);
+
+    const statements: D1PreparedStatement[] = [];
+    statements.push(
+      this.#env.DB.prepare(
+        `DELETE FROM events WHERE id IN (${deleteIds.map((id) => `UNHEX("${id}")`).join(",")})`,
+      ),
+      this.#env.DB.prepare(
+        `DELETE FROM tags WHERE id IN (${deleteIds.map((id) => `UNHEX("${id}")`).join(",")})`,
+      ),
+    );
+    const result = await this.#env.DB.batch(statements);
+    console.debug("[delete result]", result);
+
+    for (const id of deleteIds) {
+      await this.#env.events.delete(id);
+    }
   }
 
   async find(filter: Filter): Promise<Event[]> {

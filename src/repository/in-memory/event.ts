@@ -2,12 +2,32 @@ import { Event, Filter, matchFilter } from "nostr-tools";
 import { EventRepository } from "../event";
 import { config, nip11 } from "../../config";
 import { reverseChronological } from "../helper";
+import { hexRegExp } from "../../nostr";
+import { EventDeletion } from "nostr-tools/kinds";
 
 export class InMemoryEventRepository implements EventRepository {
   #events = new Map<string, Event>();
 
   async save(event: Event): Promise<void> {
     this.#events.set(event.id, event);
+  }
+
+  async delete(event: Event): Promise<void> {
+    const ids = event.tags
+      .filter(([name, value]) => name === "e" && hexRegExp.test(value))
+      .map(([, id]) => id);
+    const uniqueIds = [...new Set(ids)];
+    for (const id of uniqueIds) {
+      const e = this.#events.get(id);
+      if (
+        e === undefined ||
+        e.pubkey !== event.pubkey ||
+        e.kind === EventDeletion
+      ) {
+        continue;
+      }
+      this.#events.delete(id);
+    }
   }
 
   async find(filter: Filter): Promise<Event[]> {

@@ -3,6 +3,7 @@ import { MessageHandler } from "../handler";
 import { Connections, errorConnectionNotFound } from "../../connection";
 import { nip11 } from "../../config";
 import { EventRepository } from "../../repository/event";
+import { EventDeletion } from "nostr-tools/kinds";
 
 export class EventMessageHandler implements MessageHandler {
   #event: Event;
@@ -44,6 +45,9 @@ export class EventMessageHandler implements MessageHandler {
     }
 
     await this.#eventsRepository.save(this.#event);
+    if (this.#event.kind === EventDeletion) {
+      await this.#eventsRepository.delete(this.#event);
+    }
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 

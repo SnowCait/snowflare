@@ -1,7 +1,7 @@
 import { Filter } from "nostr-tools";
 import { nip11 } from "./config";
 
-const hexRegExp = /^[0-9a-z]{64}$/;
+export const hexRegExp = /^[0-9a-z]{64}$/;
 export const tagsFilterRegExp = /^#[a-zA-Z]$/;
 
 export const idsFilterKeys: string[] = ["ids", "limit"] satisfies Array<
