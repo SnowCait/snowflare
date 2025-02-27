@@ -57,6 +57,10 @@ export class KvD1EventRepository implements EventRepository {
       .map(([, id]) => id);
     const uniqueIds = [...new Set(ids)];
 
+    if (uniqueIds.length === 0) {
+      return;
+    }
+
     const { results } = await this.#env.DB.prepare(
       `SELECT LOWER(HEX(id)) as id, LOWER(HEX(pubkey)) as pubkey, kind FROM events WHERE id IN (${uniqueIds.map((id) => `UNHEX("${id}")`).join(",")})`,
     ).run<{ id: string; pubkey: string; kind: number }>();
@@ -65,6 +69,10 @@ export class KvD1EventRepository implements EventRepository {
         ({ pubkey, kind }) => pubkey === event.pubkey && kind !== EventDeletion,
       )
       .map(({ id }) => id);
+
+    if (deleteIds.length === 0) {
+      return;
+    }
 
     const statements: D1PreparedStatement[] = [];
     statements.push(
