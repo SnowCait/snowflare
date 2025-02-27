@@ -51,6 +51,11 @@ export class KvD1EventRepository implements EventRepository {
     console.debug("[save result]", result);
   }
 
+  /**
+   * If it is inserted between select and delete, it may not be possible to delete it,
+   * but this is a rare case and considering the D1 cost (to use covering index), it is allowed at the moment.
+   * If this is not acceptable, process everything in a batch.
+   */
   async delete(event: Event): Promise<void> {
     const ids = event.tags
       .filter(([name, value]) => name === "e" && hexRegExp.test(value))
