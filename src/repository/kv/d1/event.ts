@@ -1,8 +1,7 @@
-import { Event, Filter } from "nostr-tools";
+import { Event, Filter, sortEvents } from "nostr-tools";
 import { EventRepository } from "../../event";
 import { Bindings } from "../../../app";
 import { config, nip11 } from "../../../config";
-import { reverseChronological } from "../../helper";
 import {
   hexRegExp,
   hexTagKeys,
@@ -123,9 +122,7 @@ export class KvD1EventRepository implements EventRepository {
         }
       }),
     );
-    return events
-      .filter((event) => event !== null)
-      .toSorted(reverseChronological);
+    return sortEvents(events.filter((event) => event !== null));
   }
 
   async #findByQuery(filter: Filter): Promise<Event[]> {

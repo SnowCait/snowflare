@@ -1,7 +1,6 @@
-import { Event, Filter, matchFilter } from "nostr-tools";
+import { Event, Filter, matchFilter, sortEvents } from "nostr-tools";
 import { EventRepository } from "../event";
 import { config, nip11 } from "../../config";
-import { reverseChronological } from "../helper";
 import { hexRegExp } from "../../nostr";
 import { EventDeletion } from "nostr-tools/kinds";
 
@@ -35,9 +34,8 @@ export class InMemoryEventRepository implements EventRepository {
       filter.limit ?? config.default_limit,
       nip11.limitation.max_limit,
     );
-    return [...this.#events.values()]
-      .filter((event) => matchFilter(filter, event))
-      .toSorted(reverseChronological)
-      .slice(0, limit);
+    return sortEvents(
+      [...this.#events.values()].filter((event) => matchFilter(filter, event)),
+    ).slice(0, limit);
   }
 }
