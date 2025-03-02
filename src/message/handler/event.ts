@@ -47,7 +47,7 @@ export class EventMessageHandler implements MessageHandler {
     if (!isEphemeralKind(this.#event.kind)) {
       await this.#eventsRepository.save(this.#event);
       if (this.#event.kind === EventDeletion) {
-        await this.#eventsRepository.delete(this.#event);
+        await this.#eventsRepository.deleteBy(this.#event);
       }
     }
 

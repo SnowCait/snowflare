@@ -55,7 +55,7 @@ export class KvD1EventRepository implements EventRepository {
    * but this is a rare case and considering the D1 cost (to use covering index), it is allowed at the moment.
    * If this is not acceptable, process everything in a batch.
    */
-  async delete(event: Event): Promise<void> {
+  async deleteBy(event: Event): Promise<void> {
     const ids = event.tags
       .filter(([name, value]) => name === "e" && hexRegExp.test(value))
       .map(([, id]) => id);
@@ -73,24 +73,25 @@ export class KvD1EventRepository implements EventRepository {
         ({ pubkey, kind }) => pubkey === event.pubkey && kind !== EventDeletion,
       )
       .map(({ id }) => id);
+    await this.#delete(deleteIds);
+  }
 
-    if (deleteIds.length === 0) {
+  async #delete(ids: string[]): Promise<void> {
+    if (ids.length === 0) {
       return;
     }
 
-    const statements: D1PreparedStatement[] = [];
-    statements.push(
+    const result = await this.#env.DB.batch([
       this.#env.DB.prepare(
-        `DELETE FROM events WHERE id IN (${deleteIds.map((id) => `UNHEX("${id}")`).join(",")})`,
+        `DELETE FROM events WHERE id IN (${ids.map((id) => `UNHEX("${id}")`).join(",")})`,
       ),
       this.#env.DB.prepare(
-        `DELETE FROM tags WHERE id IN (${deleteIds.map((id) => `UNHEX("${id}")`).join(",")})`,
+        `DELETE FROM tags WHERE id IN (${ids.map((id) => `UNHEX("${id}")`).join(",")})`,
       ),
-    );
-    const result = await this.#env.DB.batch(statements);
+    ]);
     console.debug("[delete result]", result);
 
-    for (const id of deleteIds) {
+    for (const id of ids) {
       await this.#env.events.delete(id);
     }
   }

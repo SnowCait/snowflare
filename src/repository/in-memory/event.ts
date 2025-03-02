@@ -11,7 +11,7 @@ export class InMemoryEventRepository implements EventRepository {
     this.#events.set(event.id, event);
   }
 
-  async delete(event: Event): Promise<void> {
+  async deleteBy(event: Event): Promise<void> {
     const ids = event.tags
       .filter(([name, value]) => name === "e" && hexRegExp.test(value))
       .map(([, id]) => id);
