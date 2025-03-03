@@ -7,7 +7,7 @@ export default {
     icon: "",
     pubkey: "",
     contact: "",
-    supported_nips: [1, 11, 42],
+    supported_nips: [1, 9, 11, 42],
     software: "https://github.com/SnowCait/snowflare",
     version: "0.1.0",
     limitation: {
@@ -15,7 +15,7 @@ export default {
       auth_required: true,
     },
   },
-  auth_timeout: 600,
+  auth_timeout: 600, // seconds
   default_limit: 50,
   repository_type: "kv-d1",
 } as const satisfies Config;
