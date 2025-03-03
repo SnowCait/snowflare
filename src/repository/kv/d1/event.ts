@@ -59,6 +59,30 @@ export class KvD1EventRepository implements EventRepository {
 
     console.debug("[existing replaceable event]", results);
 
+    await this.#saveLatestEvent(event, results);
+  }
+
+  async saveAddressableEvent(event: Event): Promise<void> {
+    const identifier = event.tags.find(([name]) => name === "d")?.at(1) ?? "";
+    const { results } = await this.#env.DB.prepare(
+      `
+      SELECT LOWER(HEX(id)) as id, created_at FROM events
+      WHERE kind = ? AND pubkey = UNHEX(?) AND EXISTS(SELECT 1 FROM tags WHERE events.id = tags.id AND tags.name = "d" AND tags.value = ?)
+      ORDER BY created_at DESC
+      `,
+    )
+      .bind(event.kind, event.pubkey, identifier)
+      .run<{ id: string; created_at: number }>();
+
+    console.debug("[existing addressable event]", results);
+
+    await this.#saveLatestEvent(event, results);
+  }
+
+  async #saveLatestEvent(
+    event: Event,
+    results: { id: string; created_at: number }[],
+  ): Promise<void> {
     if (results.length === 0) {
       await this.save(event);
       return;

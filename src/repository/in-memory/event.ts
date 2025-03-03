@@ -17,6 +17,28 @@ export class InMemoryEventRepository implements EventRepository {
       .map(([, e]) => e);
     console.debug("[existing replaceable event]", results);
 
+    await this.#saveLatestEvent(event, results);
+  }
+
+  async saveAddressableEvent(event: Event): Promise<void> {
+    const identifier = event.tags.find(([name]) => name === "d")?.at(1) ?? "";
+    const results = [...this.#events]
+      .filter(
+        ([, e]) =>
+          e.kind === event.kind &&
+          e.pubkey === event.pubkey &&
+          e.tags.find(([name, value]) => name === "d" && value === identifier),
+      )
+      .map(([, e]) => e);
+    console.debug("[existing addressable event]", results);
+
+    await this.#saveLatestEvent(event, results);
+  }
+
+  async #saveLatestEvent(
+    event: Event,
+    results: { id: string; created_at: number }[],
+  ): Promise<void> {
     if (results.length === 0) {
       await this.save(event);
       return;

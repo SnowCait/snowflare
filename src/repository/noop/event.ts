@@ -6,6 +6,8 @@ export class NoopEventRepository implements EventRepository {
 
   async saveReplaceableEvent(): Promise<void> {}
 
+  async saveAddressableEvent(): Promise<void> {}
+
   async deleteBy(): Promise<void> {}
 
   async find(): Promise<Event[]> {

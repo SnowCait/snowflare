@@ -6,6 +6,7 @@ import { EventRepository } from "../../repository/event";
 import {
   EventDeletion,
   isEphemeralKind,
+  isParameterizedReplaceableKind,
   isReplaceableKind,
 } from "nostr-tools/kinds";
 
@@ -50,6 +51,23 @@ export class EventMessageHandler implements MessageHandler {
 
     if (isReplaceableKind(this.#event.kind)) {
       await this.#eventsRepository.saveReplaceableEvent(this.#event);
+    } else if (isParameterizedReplaceableKind(this.#event.kind)) {
+      if (
+        !this.#event.tags.some(
+          ([name, value]) => name === "d" && typeof value === "string",
+        )
+      ) {
+        ws.send(
+          JSON.stringify([
+            "OK",
+            this.#event.id,
+            false,
+            "invalid: addressable event requires d tag",
+          ]),
+        );
+        return;
+      }
+      await this.#eventsRepository.saveAddressableEvent(this.#event);
     } else if (!isEphemeralKind(this.#event.kind)) {
       await this.#eventsRepository.save(this.#event);
       if (this.#event.kind === EventDeletion) {
