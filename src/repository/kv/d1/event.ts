@@ -50,6 +50,33 @@ export class KvD1EventRepository implements EventRepository {
     console.debug("[save result]", result);
   }
 
+  async saveReplaceableEvent(event: Event): Promise<void> {
+    const { results } = await this.#env.DB.prepare(
+      "SELECT LOWER(HEX(id)) as id, created_at FROM events WHERE kind = ? AND pubkey = UNHEX(?) ORDER BY created_at DESC",
+    )
+      .bind(event.kind, event.pubkey)
+      .run<{ id: string; created_at: number }>();
+
+    console.debug("[existing replaceable event]", results);
+
+    if (results.length === 0) {
+      await this.save(event);
+      return;
+    }
+
+    const latest = results[0];
+    if (
+      latest.created_at > event.created_at ||
+      (latest.created_at === event.created_at &&
+        event.id.localeCompare(latest.id) >= 0)
+    ) {
+      return;
+    }
+
+    await this.#delete(results.map(({ id }) => id));
+    await this.save(event);
+  }
+
   /**
    * If it is inserted between select and delete, it may not be possible to delete it,
    * but this is a rare case and considering the D1 cost (to use covering index), it is allowed at the moment.

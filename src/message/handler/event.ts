@@ -3,7 +3,11 @@ import { MessageHandler } from "../handler";
 import { Connections, errorConnectionNotFound } from "../../connection";
 import { nip11 } from "../../config";
 import { EventRepository } from "../../repository/event";
-import { EventDeletion, isEphemeralKind } from "nostr-tools/kinds";
+import {
+  EventDeletion,
+  isEphemeralKind,
+  isReplaceableKind,
+} from "nostr-tools/kinds";
 
 export class EventMessageHandler implements MessageHandler {
   #event: Event;
@@ -44,7 +48,9 @@ export class EventMessageHandler implements MessageHandler {
       }
     }
 
-    if (!isEphemeralKind(this.#event.kind)) {
+    if (isReplaceableKind(this.#event.kind)) {
+      await this.#eventsRepository.saveReplaceableEvent(this.#event);
+    } else if (!isEphemeralKind(this.#event.kind)) {
       await this.#eventsRepository.save(this.#event);
       if (this.#event.kind === EventDeletion) {
         await this.#eventsRepository.deleteBy(this.#event);

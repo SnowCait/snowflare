@@ -4,6 +4,8 @@ import { EventRepository } from "../event";
 export class NoopEventRepository implements EventRepository {
   async save(): Promise<void> {}
 
+  async saveReplaceableEvent(): Promise<void> {}
+
   async deleteBy(): Promise<void> {}
 
   async find(): Promise<Event[]> {
