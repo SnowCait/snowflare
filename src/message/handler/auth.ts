@@ -7,7 +7,8 @@ import {
   Connections,
   errorConnectionNotFound,
 } from "../../connection";
-import { Register } from "../../register";
+import { Account } from "../../Account";
+import { Bindings } from "../../app";
 
 export class AuthMessageHandler implements MessageHandler {
   #event: Event;
@@ -21,7 +22,7 @@ export class AuthMessageHandler implements MessageHandler {
     ws: WebSocket,
     connections: Connections,
     storeConnection: (connection: Connection) => void,
-    register: DurableObjectStub<Register>,
+    env: Bindings,
   ): Promise<void> {
     if (!nip11.limitation.auth_required) {
       ws.send(JSON.stringify(["NOTICE", "unsupported: auth"]));
@@ -43,7 +44,8 @@ export class AuthMessageHandler implements MessageHandler {
       return;
     }
 
-    if (!(await register.has(this.#event.pubkey))) {
+    const registered = await new Account(this.#event.pubkey, env).exists();
+    if (!registered) {
       ws.send(
         JSON.stringify([
           "OK",

@@ -15,6 +15,7 @@ Nothing to do.
 ### Repository: KV + D1
 
 ```shell
+npx wrangler kv namespace create accounts
 npx wrangler kv namespace create events
 npx wrangler d1 create snowflare-events
 ```

@@ -1,5 +1,5 @@
+import { Bindings } from "../app";
 import { Connection, Connections } from "../connection";
-import { Register } from "../register";
 
 export interface MessageHandler {
   handle(
@@ -7,6 +7,6 @@ export interface MessageHandler {
     ws: WebSocket,
     connections: Connections,
     storeConnection: (connection: Connection) => void,
-    register?: DurableObjectStub<Register>,
+    env?: Bindings,
   ): void | Promise<void>;
 }

@@ -96,9 +96,6 @@ export class Relay extends DurableObject<Bindings> {
       ws.serializeAttachment(connection);
     };
 
-    const id = this.env.REGISTER.idFromName("register");
-    const register = this.env.REGISTER.get(id);
-
     const handler = MessageHandlerFactory.create(
       message,
       this.#eventsRepository,
@@ -108,7 +105,7 @@ export class Relay extends DurableObject<Bindings> {
       ws,
       this.#connections,
       storeConnection,
-      register,
+      this.env,
     );
   }
 

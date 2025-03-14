@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { Relay } from "./relay";
 import { nip11 } from "./config";
-import { Register } from "./register";
 import { Env } from "./app";
 import { HTTPException } from "hono/http-exception";
 import { nip98 } from "nostr-tools";
 import client from "./client";
+import { Account } from "./Account";
 
 const app = new Hono<Env>();
 
@@ -55,31 +55,27 @@ app.use("/register", async (c, next) => {
 
 app.get("/register", async (c) => {
   const pubkey = c.get("pubkey");
-  const id = c.env.REGISTER.idFromName("register");
-  const stub = c.env.REGISTER.get(id);
-  return new Response(null, { status: (await stub.has(pubkey)) ? 204 : 404 });
+  const exists = await new Account(pubkey, c.env).exists();
+  return new Response(null, { status: exists ? 204 : 404 });
 });
 
 app.put("/register", async (c) => {
   const pubkey = c.get("pubkey");
-  const id = c.env.REGISTER.idFromName("register");
-  const stub = c.env.REGISTER.get(id);
-  if (await stub.has(pubkey)) {
+  const account = new Account(pubkey, c.env);
+  if (await account.exists()) {
     return new Response(null, { status: 204 });
   } else {
-    await stub.set(pubkey);
+    await account.register();
     return new Response(null, { status: 201 });
   }
 });
 
 app.delete("/register", async (c) => {
   const pubkey = c.get("pubkey");
-  const id = c.env.REGISTER.idFromName("register");
-  const stub = c.env.REGISTER.get(id);
-  await stub.delete(pubkey);
+  await new Account(pubkey, c.env).unregister();
   return new Response(null, { status: 204 });
 });
 
 export default app;
 
-export { Relay, Register };
+export { Relay };

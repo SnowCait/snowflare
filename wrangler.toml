@@ -9,20 +9,19 @@ directory = "./public/"
 [durable_objects]
 bindings = [
   { class_name = "Relay", name = "RELAY" },
-  { class_name = "Register", name = "REGISTER" }
 ]
 
 [[migrations]]
 new_classes = ["Relay"]
 tag = "v1"
 
-[[migrations]]
-new_classes = ["Register"]
-tag = "v2"
-
 [[kv_namespaces]]
 binding = "events"
-id = "%KV_ID%"
+id = "%KV_ID_EVENTS%"
+
+[[kv_namespaces]]
+binding = "accounts"
+id = "%KV_ID_ACCOUNTS%"
 
 [[d1_databases]]
 binding = "DB"
