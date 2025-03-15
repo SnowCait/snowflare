@@ -4,7 +4,7 @@ export default {
   nip11: {
     name: "Snowflare",
     description: "",
-    icon: "",
+    icon: "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/2744.png",
     pubkey: "",
     contact: "",
     supported_nips: [1, 9, 11, 42],

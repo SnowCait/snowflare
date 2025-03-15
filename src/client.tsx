@@ -15,6 +15,10 @@ app.get("/", (c) => {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
+          rel="icon"
+          href="https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/2744.png"
+        />
+        <link
           rel="stylesheet"
           href="https://cdn.simplecss.org/simple.min.css"
         />

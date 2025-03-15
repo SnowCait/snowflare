@@ -47,3 +47,7 @@ Cloudflare Workers Paid plan is required for [Durable Objects](https://developer
 ```shell
 npm run deploy
 ```
+
+## Assets
+
+The icon by [jdecked/twemoji](https://github.com/jdecked/twemoji) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
