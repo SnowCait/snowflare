@@ -24,7 +24,7 @@ export class KvD1EventRepository implements EventRepository {
 
   async #saveToKV(event: Event, ipAddress: string | null): Promise<void> {
     await this.#env.events.put(event.id, JSON.stringify(event), {
-      metadata: { ipAddress },
+      metadata: { ipAddress, receivedAt: Date.now() },
     });
   }
 
