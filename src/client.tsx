@@ -36,7 +36,11 @@ app.get("/", (c) => {
         <main>
           <section>
             <h1>Snowflare</h1>
-            <p>This is a Nostr relay which requires registration to write.</p>
+            <p>
+              <code>wss://snowflare.cc/</code>
+              <button id="copy">📋</button> is a Nostr relay which requires
+              registration to write.
+            </p>
             <p>
               By registering, you are deemed to have agreed to the Terms of
               Service and Privacy Policy.

@@ -1,3 +1,9 @@
 [hidden] {
   display: none;
 }
+
+#copy {
+  border: none;
+  padding: 0;
+  background-color: inherit;
+}

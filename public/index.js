@@ -17,4 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("registered").hidden = false;
     }
   });
+
+  const copy = document.getElementById("copy");
+  copy.addEventListener("click", () => {
+    navigator.clipboard.writeText("wss://snowflare.cc/");
+    copy.textContent = "✅";
+  });
 });
