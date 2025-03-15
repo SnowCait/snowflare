@@ -29,12 +29,13 @@ export class EventMessageHandler implements MessageHandler {
       return;
     }
 
+    const connection = connections.get(ws);
+    if (connection === undefined) {
+      errorConnectionNotFound();
+      return;
+    }
+
     if (nip11.limitation.auth_required) {
-      const connection = connections.get(ws);
-      if (connection === undefined) {
-        errorConnectionNotFound();
-        return;
-      }
       const { auth } = connection;
       if (auth?.pubkey !== this.#event.pubkey) {
         ws.send(
@@ -50,7 +51,10 @@ export class EventMessageHandler implements MessageHandler {
     }
 
     if (isReplaceableKind(this.#event.kind)) {
-      await this.#eventsRepository.saveReplaceableEvent(this.#event);
+      await this.#eventsRepository.saveReplaceableEvent(
+        this.#event,
+        connection.ipAddress,
+      );
     } else if (isParameterizedReplaceableKind(this.#event.kind)) {
       if (
         !this.#event.tags.some(
@@ -67,9 +71,12 @@ export class EventMessageHandler implements MessageHandler {
         );
         return;
       }
-      await this.#eventsRepository.saveAddressableEvent(this.#event);
+      await this.#eventsRepository.saveAddressableEvent(
+        this.#event,
+        connection.ipAddress,
+      );
     } else if (!isEphemeralKind(this.#event.kind)) {
-      await this.#eventsRepository.save(this.#event);
+      await this.#eventsRepository.save(this.#event, connection.ipAddress);
       if (this.#event.kind === EventDeletion) {
         await this.#eventsRepository.deleteBy(this.#event);
       }

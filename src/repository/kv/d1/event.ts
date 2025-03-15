@@ -17,13 +17,15 @@ export class KvD1EventRepository implements EventRepository {
     this.#env = env;
   }
 
-  async save(event: Event): Promise<void> {
-    await this.#saveToKV(event);
+  async save(event: Event, ipAddress: string | null): Promise<void> {
+    await this.#saveToKV(event, ipAddress);
     await this.#saveToD1(event); // Execute after KV
   }
 
-  async #saveToKV(event: Event): Promise<void> {
-    await this.#env.events.put(event.id, JSON.stringify(event));
+  async #saveToKV(event: Event, ipAddress: string | null): Promise<void> {
+    await this.#env.events.put(event.id, JSON.stringify(event), {
+      metadata: { ipAddress },
+    });
   }
 
   async #saveToD1(event: Event): Promise<void> {
@@ -50,7 +52,10 @@ export class KvD1EventRepository implements EventRepository {
     console.debug("[save result]", result);
   }
 
-  async saveReplaceableEvent(event: Event): Promise<void> {
+  async saveReplaceableEvent(
+    event: Event,
+    ipAddress: string | null,
+  ): Promise<void> {
     const { results } = await this.#env.DB.prepare(
       "SELECT LOWER(HEX(id)) as id, created_at FROM events WHERE kind = ? AND pubkey = UNHEX(?) ORDER BY created_at DESC",
     )
@@ -59,10 +64,13 @@ export class KvD1EventRepository implements EventRepository {
 
     console.debug("[existing replaceable event]", results);
 
-    await this.#saveLatestEvent(event, results);
+    await this.#saveLatestEvent(event, results, ipAddress);
   }
 
-  async saveAddressableEvent(event: Event): Promise<void> {
+  async saveAddressableEvent(
+    event: Event,
+    ipAddress: string | null,
+  ): Promise<void> {
     const identifier = event.tags.find(([name]) => name === "d")?.at(1) ?? "";
     const { results } = await this.#env.DB.prepare(
       `
@@ -76,15 +84,16 @@ export class KvD1EventRepository implements EventRepository {
 
     console.debug("[existing addressable event]", results);
 
-    await this.#saveLatestEvent(event, results);
+    await this.#saveLatestEvent(event, results, ipAddress);
   }
 
   async #saveLatestEvent(
     event: Event,
     results: { id: string; created_at: number }[],
+    ipAddress: string | null,
   ): Promise<void> {
     if (results.length === 0) {
-      await this.save(event);
+      await this.save(event, ipAddress);
       return;
     }
 
@@ -98,7 +107,7 @@ export class KvD1EventRepository implements EventRepository {
     }
 
     await this.#delete(results.map(({ id }) => id));
-    await this.save(event);
+    await this.save(event, ipAddress);
   }
 
   /**

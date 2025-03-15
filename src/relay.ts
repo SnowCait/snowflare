@@ -35,9 +35,12 @@ export class Relay extends DurableObject<Bindings> {
     const { 0: client, 1: server } = webSocketPair;
     this.ctx.acceptWebSocket(server);
 
+    const ipAddress = request.headers.get("CF-Connecting-IP");
+
     if (nip11.limitation.auth_required) {
       const challenge = sendAuthChallenge(server);
       const connection = {
+        ipAddress,
         url: this.#convertToWebSocketUrl(request.url),
         auth: {
           challenge,
@@ -49,6 +52,7 @@ export class Relay extends DurableObject<Bindings> {
       server.serializeAttachment(connection);
     } else {
       const connection = {
+        ipAddress,
         url: this.#convertToWebSocketUrl(request.url),
         subscriptions: new Map(),
       } satisfies Connection;
