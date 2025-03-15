@@ -13,6 +13,7 @@ app.get("/", (c) => {
           rel="stylesheet"
           href="https://cdn.simplecss.org/simple.min.css"
         />
+        <link rel="stylesheet" href="/index.css" />
         <script src="https://unpkg.com/nostr-tools@2.10.4/lib/nostr.bundle.js"></script>
         <script src="/index.js"></script>
       </head>
