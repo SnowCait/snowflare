@@ -29,7 +29,7 @@ npx wrangler d1 execute snowflare-events --local --file=./src/repository/kv/d1/s
 #### Production
 
 ```shell
-npx wrangler d1 execute snowflare-events --file=./src/repository/kv/d1/schema.create.sql
+npx wrangler d1 execute snowflare-events --remote --file=./src/repository/kv/d1/schema.create.sql
 ```
 
 ## Development
