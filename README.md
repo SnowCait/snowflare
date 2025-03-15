@@ -48,6 +48,9 @@ Cloudflare Workers Paid plan is required for [Durable Objects](https://developer
 npm run deploy
 ```
 
-## Assets
+## Assets and libraries
 
 The icon by [jdecked/twemoji](https://github.com/jdecked/twemoji) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+[Simple.css](https://github.com/kevquirk/simple.css) is licensed under [MIT](https://github.com/kevquirk/simple.css/blob/main/LICENSE).
+[Nostr-Login](https://github.com/nostrband/nostr-login) is licensed under [MIT](https://github.com/nostrband/nostr-login/blob/main/LICENSE).
+See [package.json](package.json) for other libraries.
