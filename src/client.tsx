@@ -8,6 +8,11 @@ app.get("/", (c) => {
       <head>
         <meta charset="utf-8" />
         <title>Snowflare</title>
+        <meta property="og:title" content="Snowflare" />
+        <meta
+          property="og:description"
+          content="This is a Nostr relay which requires registration to write."
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
           rel="stylesheet"
