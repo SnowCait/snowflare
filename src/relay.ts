@@ -81,20 +81,23 @@ export class Relay extends DurableObject<Bindings> {
     };
   }
 
-  async prune(): Promise<void> {
+  async prune(): Promise<number> {
     const filters = await this.ctx.storage.list({ limit: 2000 });
     const availableKeys = [...this.#connections].flatMap(([, connection]) => [
       ...connection.subscriptions.values(),
     ]);
     console.debug("[prune]", filters.size, availableKeys.length);
+    let deleted = 0;
     for (const [key] of filters) {
       if (
         !availableKeys.includes(key) &&
         typeof filters.get(key) === "object"
       ) {
         await this.ctx.storage.delete(key);
+        deleted++;
       }
     }
+    return deleted;
   }
 
   #convertToWebSocketUrl(url: string): string {
