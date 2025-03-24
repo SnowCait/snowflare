@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { Connection } from "./connection";
+import { Connection, errorConnectionNotFound } from "./connection";
 import { config, nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { MessageHandlerFactory } from "./message/factory";
@@ -113,12 +113,30 @@ export class Relay extends DurableObject<Bindings> {
     );
   }
 
-  webSocketClose(
+  async webSocketClose(
     ws: WebSocket,
     code: number,
     reason: string,
     wasClean: boolean,
-  ): void | Promise<void> {
-    console.debug("[ws close]", code, reason, wasClean);
+  ): Promise<void> {
+    console.debug("[ws close]", code, reason, wasClean, ws.readyState);
+    this.#cleanUp(ws);
+  }
+
+  async #cleanUp(ws: WebSocket): Promise<void> {
+    const connection = this.#connections.get(ws);
+    if (connection === undefined) {
+      errorConnectionNotFound();
+      return;
+    }
+    console.debug("[delete subscriptions]", connection.subscriptions);
+    for (const [, key] of connection.subscriptions) {
+      await this.ctx.storage.delete(key);
+    }
+    this.#connections.delete(ws);
+  }
+
+  webSocketError(ws: WebSocket, error: unknown): void | Promise<void> {
+    console.error("[ws error]", ws.readyState, error);
   }
 }
