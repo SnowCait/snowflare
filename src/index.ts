@@ -36,6 +36,13 @@ app.get("/metrics", async (c) => {
   return c.json(metrics);
 });
 
+app.get("/prune", async (c) => {
+  const id = c.env.RELAY.idFromName("relay");
+  const stub = c.env.RELAY.get(id);
+  await stub.prune();
+  return new Response(null, { status: 204 });
+});
+
 app.use("/register", async (c, next) => {
   const token = c.req.header("Authorization");
   if (token === undefined) {

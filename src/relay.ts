@@ -81,6 +81,22 @@ export class Relay extends DurableObject<Bindings> {
     };
   }
 
+  async prune(): Promise<void> {
+    const filters = await this.ctx.storage.list({ limit: 1000 });
+    const availableKeys = [...this.#connections].flatMap(([, connection]) => [
+      ...connection.subscriptions.values(),
+    ]);
+    for (const [key] of filters) {
+      if (
+        !availableKeys.includes(key) &&
+        typeof filters.get(key) === "object"
+      ) {
+        console.debug("[prune]", key);
+        await this.ctx.storage.delete(key);
+      }
+    }
+  }
+
   #convertToWebSocketUrl(url: string): string {
     const u = new URL(url);
     u.protocol = u.protocol === "http:" ? "ws:" : "wss:";
