@@ -82,7 +82,7 @@ export class Relay extends DurableObject<Bindings> {
   }
 
   async prune(): Promise<void> {
-    const filters = await this.ctx.storage.list({ limit: 5000 });
+    const filters = await this.ctx.storage.list({ limit: 2000 });
     const availableKeys = [...this.#connections].flatMap(([, connection]) => [
       ...connection.subscriptions.values(),
     ]);
