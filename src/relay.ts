@@ -69,15 +69,15 @@ export class Relay extends DurableObject<Bindings> {
   async metrics(): Promise<{
     connections: number;
     subscriptions: number;
-    // filters: number;
+    filters: number;
   }> {
-    // const filters = await this.ctx.storage.list();
+    const filters = await this.ctx.storage.list();
     return {
       connections: this.#connections.size,
       subscriptions: [...this.#connections]
         .map(([, connection]) => connection.subscriptions.size)
         .reduce((sum, value) => sum + value, 0),
-      // filters: filters.size,
+      filters: filters.size,
     };
   }
 
