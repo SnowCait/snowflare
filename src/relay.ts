@@ -86,12 +86,12 @@ export class Relay extends DurableObject<Bindings> {
     const availableKeys = [...this.#connections].flatMap(([, connection]) => [
       ...connection.subscriptions.values(),
     ]);
+    console.debug("[prune]", filters.size, availableKeys.length);
     for (const [key] of filters) {
       if (
         !availableKeys.includes(key) &&
         typeof filters.get(key) === "object"
       ) {
-        console.debug("[prune]", key);
         await this.ctx.storage.delete(key);
       }
     }
@@ -145,7 +145,9 @@ export class Relay extends DurableObject<Bindings> {
       errorConnectionNotFound();
       return;
     }
-    console.debug("[delete subscriptions]", connection.subscriptions);
+    console.debug("[delete subscriptions]", {
+      subscriptions: connection.subscriptions,
+    });
     for (const [, key] of connection.subscriptions) {
       await this.ctx.storage.delete(key);
     }
