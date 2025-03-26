@@ -178,7 +178,7 @@ export class KvD1EventRepository implements EventRepository {
           }
           return JSON.parse(json) as Event;
         } catch (error) {
-          console.error("[json parse failed]", error);
+          console.error("[json parse failed]", error, `(${ids.length})`);
           return null;
         }
       }),
