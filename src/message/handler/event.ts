@@ -48,6 +48,16 @@ export class EventMessageHandler implements MessageHandler {
         );
         return;
       }
+    } else if (this.#event.tags.some(([name]) => name === "-")) {
+      ws.send(
+        JSON.stringify([
+          "OK",
+          this.#event.id,
+          false,
+          "auth-required: this event may only be published by its author",
+        ]),
+      );
+      return;
     }
 
     if (isReplaceableKind(this.#event.kind)) {
