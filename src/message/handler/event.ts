@@ -1,6 +1,10 @@
 import { Event, Filter, matchFilter, verifyEvent } from "nostr-tools";
 import { MessageHandler } from "../handler";
-import { Connections, errorConnectionNotFound } from "../../connection";
+import {
+  Connection,
+  Connections,
+  errorConnectionNotFound,
+} from "../../connection";
 import { nip11 } from "../../config";
 import { EventRepository } from "../../repository/event";
 import {
@@ -9,6 +13,7 @@ import {
   isParameterizedReplaceableKind,
   isReplaceableKind,
 } from "nostr-tools/kinds";
+import { sendAuthChallenge } from "../sender/auth";
 
 export class EventMessageHandler implements MessageHandler {
   #event: Event;
@@ -23,6 +28,7 @@ export class EventMessageHandler implements MessageHandler {
     ctx: DurableObjectState,
     ws: WebSocket,
     connections: Connections,
+    storeConnection: (connection: Connection) => void,
   ): Promise<void> {
     if (!verifyEvent(this.#event)) {
       ws.send(JSON.stringify(["NOTICE", "invalid: event"]));
@@ -48,15 +54,35 @@ export class EventMessageHandler implements MessageHandler {
         );
         return;
       }
-    } else if (this.#event.tags.some(([name]) => name === "-")) {
-      ws.send(
-        JSON.stringify([
-          "OK",
-          this.#event.id,
-          false,
-          "auth-required: this event may only be published by its author",
-        ]),
-      );
+    } else if (
+      this.#event.tags.some(([name]) => name === "-") &&
+      connection.auth?.pubkey !== this.#event.pubkey
+    ) {
+      if (connection.auth?.pubkey === undefined) {
+        const challenge = sendAuthChallenge(ws);
+        connection.auth = {
+          challenge,
+          challengedAt: Date.now(),
+        };
+        storeConnection(connection);
+        ws.send(
+          JSON.stringify([
+            "OK",
+            this.#event.id,
+            false,
+            "auth-required: please send challenge",
+          ]),
+        );
+      } else {
+        ws.send(
+          JSON.stringify([
+            "OK",
+            this.#event.id,
+            false,
+            "auth-required: this event may only be published by its author",
+          ]),
+        );
+      }
       return;
     }
 
