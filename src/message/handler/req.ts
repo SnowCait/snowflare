@@ -50,6 +50,9 @@ export class ReqMessageHandler implements MessageHandler {
     const key = crypto.randomUUID();
     await ctx.storage.put(key, this.#filter);
     const { subscriptions } = connection;
+    if (subscriptions.has(this.#subscriptionId)) {
+      await ctx.storage.delete(subscriptions.get(this.#subscriptionId)!);
+    }
     subscriptions.set(this.#subscriptionId, key);
     storeConnection({ ...connection, subscriptions });
 
