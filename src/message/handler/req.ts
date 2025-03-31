@@ -36,8 +36,14 @@ export class ReqMessageHandler implements MessageHandler {
     }
 
     if (!validateFilter(this.#filter)) {
-      console.debug("[invalid filter]", this.#filter);
-      ws.send(JSON.stringify(["NOTICE", "invalid: filter"]));
+      console.debug({ message: "[unsupported filter]", filter: this.#filter });
+      ws.send(
+        JSON.stringify([
+          "CLOSED",
+          this.#subscriptionId,
+          "unsupported: filter contains unsupported elements",
+        ]),
+      );
       return;
     }
 
