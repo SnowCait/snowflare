@@ -10,7 +10,3 @@ export type Connection = {
   subscriptions: Map<SubscriptionId, SubscriptionKey>;
 };
 export type Connections = Map<WebSocket, Connection>;
-
-export function errorConnectionNotFound() {
-  console.error("[connection not found]");
-}

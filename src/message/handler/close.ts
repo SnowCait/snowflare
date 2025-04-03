@@ -1,8 +1,4 @@
-import {
-  Connection,
-  Connections,
-  errorConnectionNotFound,
-} from "../../connection";
+import { Connection } from "../../connection";
 import { MessageHandler } from "../handler";
 
 export class CloseMessageHandler implements MessageHandler {
@@ -12,24 +8,15 @@ export class CloseMessageHandler implements MessageHandler {
     this.#subscriptionId = subscriptionId;
   }
 
-  async handle(
-    ctx: DurableObjectState,
-    ws: WebSocket,
-    connections: Connections,
-    storeConnection: (connection: Connection) => void,
-  ): Promise<void> {
+  async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
     console.debug("[CLOSE]", this.#subscriptionId);
 
-    const connection = connections.get(ws);
-    if (connection === undefined) {
-      errorConnectionNotFound();
-      return;
-    }
+    const connection = ws.deserializeAttachment() as Connection;
     const key = connection.subscriptions.get(this.#subscriptionId);
     if (key !== undefined) {
       await ctx.storage.delete(key);
     }
     connection.subscriptions.delete(this.#subscriptionId);
-    storeConnection(connection);
+    ws.serializeAttachment(connection);
   }
 }

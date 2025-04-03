@@ -1,10 +1,6 @@
 import { Filter } from "nostr-tools";
 import { MessageHandler } from "../handler";
-import {
-  Connection,
-  Connections,
-  errorConnectionNotFound,
-} from "../../connection";
+import { Connection } from "../../connection";
 import { EventRepository } from "../../repository/event";
 import { validateFilter } from "../../nostr";
 
@@ -23,19 +19,10 @@ export class ReqMessageHandler implements MessageHandler {
     this.#eventsRepository = eventsRepository;
   }
 
-  async handle(
-    ctx: DurableObjectState,
-    ws: WebSocket,
-    connections: Connections,
-    storeConnection: (connection: Connection) => void,
-  ): Promise<void> {
+  async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
     console.debug("[REQ]", { filter: this.#filter });
 
-    const connection = connections.get(ws);
-    if (connection === undefined) {
-      errorConnectionNotFound();
-      return;
-    }
+    const connection = ws.deserializeAttachment() as Connection;
 
     if (!validateFilter(this.#filter)) {
       console.debug("[unsupported filter]", { filter: this.#filter });
@@ -51,18 +38,21 @@ export class ReqMessageHandler implements MessageHandler {
 
     const key = crypto.randomUUID();
     await ctx.storage.put(key, this.#filter);
-    const { subscriptions } = connection;
-    if (subscriptions.has(this.#subscriptionId)) {
-      await ctx.storage.delete(subscriptions.get(this.#subscriptionId)!);
+    if (connection.subscriptions.has(this.#subscriptionId)) {
+      await ctx.storage.delete(
+        connection.subscriptions.get(this.#subscriptionId)!,
+      );
     }
-    subscriptions.set(this.#subscriptionId, key);
+    connection.subscriptions.set(this.#subscriptionId, key);
     try {
-      storeConnection({ ...connection, subscriptions });
+      ws.serializeAttachment(connection);
     } catch (error) {
-      console.error("[ws serialize attachment error]", {
-        error,
-        subscriptions,
-      });
+      console.error(
+        `[ws serialize attachment error] ${error} (${connection.subscriptions.size})`,
+        {
+          connection,
+        },
+      );
     }
 
     const events = await this.#eventsRepository.find(this.#filter);

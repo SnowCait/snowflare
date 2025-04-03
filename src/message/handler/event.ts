@@ -1,10 +1,6 @@
 import { Event, Filter, matchFilter, verifyEvent } from "nostr-tools";
 import { MessageHandler } from "../handler";
-import {
-  Connection,
-  Connections,
-  errorConnectionNotFound,
-} from "../../connection";
+import { Connection } from "../../connection";
 import { nip11 } from "../../config";
 import { EventRepository } from "../../repository/event";
 import {
@@ -24,12 +20,7 @@ export class EventMessageHandler implements MessageHandler {
     this.#eventsRepository = eventsRepository;
   }
 
-  async handle(
-    ctx: DurableObjectState,
-    ws: WebSocket,
-    connections: Connections,
-    storeConnection: (connection: Connection) => void,
-  ): Promise<void> {
+  async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
     console.debug("[EVENT]", { event: this.#event });
 
     if (!verifyEvent(this.#event)) {
@@ -37,11 +28,7 @@ export class EventMessageHandler implements MessageHandler {
       return;
     }
 
-    const connection = connections.get(ws);
-    if (connection === undefined) {
-      errorConnectionNotFound();
-      return;
-    }
+    const connection = ws.deserializeAttachment() as Connection;
 
     if (nip11.limitation.auth_required) {
       const { auth } = connection;
@@ -66,7 +53,7 @@ export class EventMessageHandler implements MessageHandler {
           challenge,
           challengedAt: Date.now(),
         };
-        storeConnection(connection);
+        ws.serializeAttachment(connection);
         ws.send(
           JSON.stringify([
             "OK",
@@ -122,15 +109,13 @@ export class EventMessageHandler implements MessageHandler {
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));
 
-    await this.#broadcast(ctx, connections);
+    await this.#broadcast(ctx);
   }
 
-  async #broadcast(
-    ctx: DurableObjectState,
-    connections: Connections,
-  ): Promise<void> {
+  async #broadcast(ctx: DurableObjectState): Promise<void> {
     const filters = await ctx.storage.list<Filter>();
-    for (const [ws, { subscriptions }] of connections) {
+    for (const ws of ctx.getWebSockets()) {
+      const { subscriptions } = ws.deserializeAttachment() as Connection;
       for (const [id, key] of subscriptions) {
         const filter = filters.get(key);
         if (filter === undefined) {

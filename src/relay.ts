@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { Connection, errorConnectionNotFound } from "./connection";
+import { Connection } from "./connection";
 import { config, nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
 import { MessageHandlerFactory } from "./message/factory";
@@ -8,8 +8,6 @@ import { EventRepository } from "./repository/event";
 import { RepositoryFactory } from "./repository/factory";
 
 export class Relay extends DurableObject<Bindings> {
-  #connections = new Map<WebSocket, Connection>();
-
   #eventsRepository: EventRepository;
 
   constructor(ctx: DurableObjectState, env: Bindings) {
@@ -21,17 +19,6 @@ export class Relay extends DurableObject<Bindings> {
       config.repository_type,
       this.env,
     );
-
-    const restoreConnections = () => {
-      for (const ws of this.ctx.getWebSockets()) {
-        const connections = ws.deserializeAttachment();
-        this.#connections.set(ws, connections);
-      }
-    };
-
-    const start = Date.now();
-    restoreConnections();
-    console.debug("[restore connections]", Date.now() - start);
   }
 
   fetch(request: Request): Response {
@@ -54,7 +41,6 @@ export class Relay extends DurableObject<Bindings> {
         },
         subscriptions: new Map(),
       } satisfies Connection;
-      this.#connections.set(server, connection);
       server.serializeAttachment(connection);
     } else {
       const connection = {
@@ -62,7 +48,6 @@ export class Relay extends DurableObject<Bindings> {
         url: this.#convertToWebSocketUrl(request.url),
         subscriptions: new Map(),
       } satisfies Connection;
-      this.#connections.set(server, connection);
       server.serializeAttachment(connection);
     }
 
@@ -78,10 +63,13 @@ export class Relay extends DurableObject<Bindings> {
     filters: number;
   }> {
     const filters = await this.ctx.storage.list();
+    const wss = this.ctx.getWebSockets();
     return {
-      connections: this.#connections.size,
-      subscriptions: [...this.#connections]
-        .map(([, connection]) => connection.subscriptions.size)
+      connections: wss.length,
+      subscriptions: wss
+        .map(
+          (ws) => (ws.deserializeAttachment() as Connection).subscriptions.size,
+        )
         .reduce((sum, value) => sum + value, 0),
       filters: filters.size,
     };
@@ -89,9 +77,11 @@ export class Relay extends DurableObject<Bindings> {
 
   async prune(): Promise<number> {
     const filters = await this.ctx.storage.list({ limit: 2000 });
-    const availableKeys = [...this.#connections].flatMap(([, connection]) => [
-      ...connection.subscriptions.values(),
-    ]);
+    const availableKeys = this.ctx
+      .getWebSockets()
+      .flatMap((ws) => [
+        ...(ws.deserializeAttachment() as Connection).subscriptions.values(),
+      ]);
     console.debug("[prune]", filters.size, availableKeys.length);
     let deleted = 0;
     for (const [key] of filters) {
@@ -122,22 +112,11 @@ export class Relay extends DurableObject<Bindings> {
 
     console.debug("[ws message]", message);
 
-    const storeConnection = (connection: Connection): void => {
-      this.#connections.set(ws, connection);
-      ws.serializeAttachment(connection);
-    };
-
     const handler = MessageHandlerFactory.create(
       message,
       this.#eventsRepository,
     );
-    await handler?.handle(
-      this.ctx,
-      ws,
-      this.#connections,
-      storeConnection,
-      this.env,
-    );
+    await handler?.handle(this.ctx, ws, this.env);
   }
 
   async webSocketClose(
@@ -151,18 +130,11 @@ export class Relay extends DurableObject<Bindings> {
   }
 
   async #cleanUp(ws: WebSocket): Promise<void> {
-    const connection = this.#connections.get(ws);
-    if (connection === undefined) {
-      errorConnectionNotFound();
-      return;
-    }
-    console.debug("[delete subscriptions]", {
-      subscriptions: connection.subscriptions,
-    });
-    for (const [, key] of connection.subscriptions) {
+    const { subscriptions } = ws.deserializeAttachment() as Connection;
+    console.debug("[delete subscriptions]", { subscriptions });
+    for (const [, key] of subscriptions) {
       await this.ctx.storage.delete(key);
     }
-    this.#connections.delete(ws);
   }
 
   webSocketError(ws: WebSocket, error: unknown): void | Promise<void> {
