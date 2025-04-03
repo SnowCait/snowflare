@@ -3,6 +3,7 @@ import { MessageHandler } from "../handler";
 import { Connection } from "../../connection";
 import { EventRepository } from "../../repository/event";
 import { validateFilter } from "../../nostr";
+import { nip11 } from "../../config";
 
 export class ReqMessageHandler implements MessageHandler {
   #subscriptionId: string;
@@ -21,6 +22,18 @@ export class ReqMessageHandler implements MessageHandler {
 
   async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
     console.debug("[REQ]", { filter: this.#filter });
+
+    if (this.#subscriptionId.length > nip11.limitation.max_subid_length) {
+      console.debug("[too long subscription id]", this.#subscriptionId);
+      ws.send(
+        JSON.stringify([
+          "CLOSED",
+          this.#subscriptionId,
+          "unsupported: too long subscription id",
+        ]),
+      );
+      return;
+    }
 
     const connection = ws.deserializeAttachment() as Connection;
 
@@ -42,6 +55,17 @@ export class ReqMessageHandler implements MessageHandler {
       await ctx.storage.delete(
         connection.subscriptions.get(this.#subscriptionId)!,
       );
+    } else if (
+      connection.subscriptions.size >= nip11.limitation.max_subscriptions
+    ) {
+      ws.send(
+        JSON.stringify([
+          "CLOSED",
+          this.#subscriptionId,
+          "unsupported: too many subscriptions",
+        ]),
+      );
+      return;
     }
     connection.subscriptions.set(this.#subscriptionId, key);
     try {
