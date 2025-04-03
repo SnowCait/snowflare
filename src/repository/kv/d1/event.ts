@@ -46,10 +46,10 @@ export class KvD1EventRepository implements EventRepository {
       );
     }
 
-    console.debug("[save event]", event);
+    console.debug("[save event]", { event });
 
     const result = await this.#env.DB.batch<void>(statements);
-    console.debug("[save result]", result);
+    console.debug("[save result]", { result });
   }
 
   async saveReplaceableEvent(
@@ -62,7 +62,7 @@ export class KvD1EventRepository implements EventRepository {
       .bind(event.kind, event.pubkey)
       .run<{ id: string; created_at: number }>();
 
-    console.debug("[existing replaceable event]", results);
+    console.debug("[existing replaceable event]", { results });
 
     await this.#saveLatestEvent(event, results, ipAddress);
   }
@@ -82,7 +82,7 @@ export class KvD1EventRepository implements EventRepository {
       .bind(event.kind, event.pubkey, identifier)
       .run<{ id: string; created_at: number }>();
 
-    console.debug("[existing addressable event]", results);
+    console.debug("[existing addressable event]", { results });
 
     await this.#saveLatestEvent(event, results, ipAddress);
   }
@@ -149,7 +149,7 @@ export class KvD1EventRepository implements EventRepository {
         `DELETE FROM tags WHERE id IN (${ids.map((id) => `UNHEX("${id}")`).join(",")})`,
       ),
     ]);
-    console.debug("[delete result]", result);
+    console.debug("[delete result]", { result });
 
     for (const id of ids) {
       await this.#env.events.delete(id);
@@ -225,7 +225,7 @@ export class KvD1EventRepository implements EventRepository {
           !Array.isArray(values) ||
           !values.every((v) => typeof v === "string")
         ) {
-          console.error("[logic error]", filter);
+          console.error("[logic error]", { filter });
           continue;
         }
 
@@ -248,7 +248,7 @@ export class KvD1EventRepository implements EventRepository {
 
     // D1 limit
     if (params.length > 100) {
-      console.error("[too many bound parameters]", params.length, filter);
+      console.error("[too many bound parameters]", params.length, { filter });
     }
 
     const select = "SELECT LOWER(HEX(id)) as id FROM events";
@@ -260,12 +260,12 @@ export class KvD1EventRepository implements EventRepository {
         ? [select, "WHERE", wheres.join(" AND "), orderBy, limit]
         : [select, orderBy, limit]
     ).join(" ");
-    console.debug("[find SQL]", query, JSON.stringify(params), filter);
+    console.debug("[find SQL]", query, { params, filter });
 
     const result = await this.#env.DB.prepare(query)
       .bind(...params)
       .run<{ id: string }>();
-    console.debug("[find result]", result);
+    console.debug("[find result]", { result });
 
     return this.#findByIds(result.results.map(({ id }) => id));
   }

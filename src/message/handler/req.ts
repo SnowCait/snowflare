@@ -38,7 +38,7 @@ export class ReqMessageHandler implements MessageHandler {
     }
 
     if (!validateFilter(this.#filter)) {
-      console.debug({ message: "[unsupported filter]", filter: this.#filter });
+      console.debug("[unsupported filter]", { filter: this.#filter });
       ws.send(
         JSON.stringify([
           "CLOSED",

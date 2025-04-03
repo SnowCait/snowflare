@@ -12,5 +12,5 @@ export type Connection = {
 export type Connections = Map<WebSocket, Connection>;
 
 export function errorConnectionNotFound() {
-  console.error({ message: "connection is undefined" });
+  console.error("[connection not found]");
 }

@@ -15,7 +15,7 @@ export class InMemoryEventRepository implements EventRepository {
     const results = [...this.#events]
       .filter(([, e]) => e.kind === event.kind && e.pubkey === event.pubkey)
       .map(([, e]) => e);
-    console.debug("[existing replaceable event]", results);
+    console.debug("[existing replaceable event]", { results });
 
     await this.#saveLatestEvent(event, results);
   }
@@ -30,7 +30,7 @@ export class InMemoryEventRepository implements EventRepository {
           e.tags.find(([name, value]) => name === "d" && value === identifier),
       )
       .map(([, e]) => e);
-    console.debug("[existing addressable event]", results);
+    console.debug("[existing addressable event]", { results });
 
     await this.#saveLatestEvent(event, results);
   }
