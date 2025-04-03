@@ -24,6 +24,8 @@ export class AuthMessageHandler implements MessageHandler {
     storeConnection: (connection: Connection) => void,
     env: Bindings,
   ): Promise<void> {
+    console.debug("[AUTH]", { event: this.#event });
+
     const connection = connections.get(ws);
     if (connection === undefined) {
       errorConnectionNotFound();

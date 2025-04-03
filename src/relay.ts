@@ -13,6 +13,8 @@ export class Relay extends DurableObject<Bindings> {
   #eventsRepository: EventRepository;
 
   constructor(ctx: DurableObjectState, env: Bindings) {
+    console.debug("[relay constructor]");
+
     super(ctx, env);
 
     this.#eventsRepository = RepositoryFactory.create(
@@ -31,6 +33,8 @@ export class Relay extends DurableObject<Bindings> {
   }
 
   fetch(request: Request): Response {
+    console.debug("[relay fetch]");
+
     const webSocketPair = new WebSocketPair();
     const { 0: client, 1: server } = webSocketPair;
     this.ctx.acceptWebSocket(server);
@@ -113,6 +117,8 @@ export class Relay extends DurableObject<Bindings> {
     if (message instanceof ArrayBuffer) {
       return;
     }
+
+    console.debug("[ws message]", message);
 
     const storeConnection = (connection: Connection): void => {
       this.#connections.set(ws, connection);

@@ -18,6 +18,8 @@ export class CloseMessageHandler implements MessageHandler {
     connections: Connections,
     storeConnection: (connection: Connection) => void,
   ): Promise<void> {
+    console.debug("[CLOSE]", this.#subscriptionId);
+
     const connection = connections.get(ws);
     if (connection === undefined) {
       errorConnectionNotFound();

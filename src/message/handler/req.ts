@@ -29,6 +29,8 @@ export class ReqMessageHandler implements MessageHandler {
     connections: Connections,
     storeConnection: (connection: Connection) => void,
   ): Promise<void> {
+    console.debug("[REQ]", { filter: this.#filter });
+
     const connection = connections.get(ws);
     if (connection === undefined) {
       errorConnectionNotFound();

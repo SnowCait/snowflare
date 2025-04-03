@@ -30,6 +30,8 @@ export class EventMessageHandler implements MessageHandler {
     connections: Connections,
     storeConnection: (connection: Connection) => void,
   ): Promise<void> {
+    console.debug("[EVENT]", { event: this.#event });
+
     if (!verifyEvent(this.#event)) {
       ws.send(JSON.stringify(["NOTICE", "invalid: event"]));
       return;
