@@ -29,7 +29,9 @@ export class Relay extends DurableObject<Bindings> {
       }
     };
 
+    const start = Date.now();
     restoreConnections();
+    console.debug("[restore connections]", Date.now() - start);
   }
 
   fetch(request: Request): Response {

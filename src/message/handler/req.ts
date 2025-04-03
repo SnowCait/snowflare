@@ -56,7 +56,14 @@ export class ReqMessageHandler implements MessageHandler {
       await ctx.storage.delete(subscriptions.get(this.#subscriptionId)!);
     }
     subscriptions.set(this.#subscriptionId, key);
-    storeConnection({ ...connection, subscriptions });
+    try {
+      storeConnection({ ...connection, subscriptions });
+    } catch (error) {
+      console.error("[ws serialize attachment error]", {
+        error,
+        subscriptions,
+      });
+    }
 
     const events = await this.#eventsRepository.find(this.#filter);
     for (const event of events) {
