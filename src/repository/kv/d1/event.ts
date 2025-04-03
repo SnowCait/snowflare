@@ -265,7 +265,11 @@ export class KvD1EventRepository implements EventRepository {
     const result = await this.#env.DB.prepare(query)
       .bind(...params)
       .run<{ id: string }>();
-    console.debug("[find result]", { result });
+    console.debug("[find result]", {
+      ...result,
+      results: result.results.length,
+      filter,
+    });
 
     return this.#findByIds(result.results.map(({ id }) => id));
   }
