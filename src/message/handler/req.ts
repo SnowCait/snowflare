@@ -35,8 +35,6 @@ export class ReqMessageHandler implements MessageHandler {
       return;
     }
 
-    const connection = ws.deserializeAttachment() as Connection;
-
     if (!validateFilter(this.#filter)) {
       console.debug("[unsupported filter]", { filter: this.#filter });
       ws.send(
@@ -49,15 +47,14 @@ export class ReqMessageHandler implements MessageHandler {
       return;
     }
 
-    const key = crypto.randomUUID();
-    await ctx.storage.put(key, this.#filter);
+    const connection = ws.deserializeAttachment() as Connection;
     if (connection.subscriptions.has(this.#subscriptionId)) {
-      await ctx.storage.delete(
-        connection.subscriptions.get(this.#subscriptionId)!,
-      );
+      const key = connection.subscriptions.get(this.#subscriptionId)!;
+      await ctx.storage.delete(key);
     } else if (
       connection.subscriptions.size >= nip11.limitation.max_subscriptions
     ) {
+      console.debug("[too many subscriptions]", { connection });
       ws.send(
         JSON.stringify([
           "CLOSED",
@@ -67,6 +64,9 @@ export class ReqMessageHandler implements MessageHandler {
       );
       return;
     }
+
+    const key = crypto.randomUUID();
+    await ctx.storage.put(key, this.#filter);
     connection.subscriptions.set(this.#subscriptionId, key);
     try {
       ws.serializeAttachment(connection);
