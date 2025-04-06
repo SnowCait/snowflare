@@ -16,6 +16,7 @@ export default {
       max_limit: 500,
       max_subid_length: 50,
       auth_required: true,
+      restricted_writes: true,
     },
   },
   auth_timeout: 600, // seconds
