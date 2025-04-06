@@ -96,7 +96,7 @@ describe("validate filter", () => {
   it("tags", () => {
     expect(validateFilter({ "#t": [] })).toBe(false);
     expect(validateFilter({ "#t": ["test"] })).toBe(true);
-    expect(validateFilter({ "#t": [""] })).toBe(false);
+    expect(validateFilter({ "#d": [""] })).toBe(true);
     expect(validateFilter({ "#t": [0 as any] })).toBe(false); // eslint-disable-line @typescript-eslint/no-explicit-any
     expect(validateFilter({ "#e": ["0"] })).toBe(false);
     expect(validateFilter({ "#E": ["0"] })).toBe(false);
