@@ -169,28 +169,20 @@ export class KvD1EventRepository implements EventRepository {
   }
 
   async #findByIds(ids: string[]): Promise<Event[]> {
-    const concurrency = 50;
-    const events: (Event | null)[] = [];
-
-    for (let i = 0; i < ids.length; i += concurrency) {
-      const chunk = ids.slice(i, i + concurrency);
-      const chunkEvents = await Promise.all(
-        chunk.map(async (id) => {
-          try {
-            const json = await this.#env.events.get(id);
-            if (json === null) {
-              return null;
-            }
-            return JSON.parse(json) as Event;
-          } catch (error) {
-            console.error("[json parse failed]", error, `(${chunk.length})`);
+    const events = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const json = await this.#env.events.get(id);
+          if (json === null) {
             return null;
           }
-        }),
-      );
-      events.push(...chunkEvents);
-    }
-
+          return JSON.parse(json) as Event;
+        } catch (error) {
+          console.error("[json parse failed]", error, `(${ids.length})`);
+          return null;
+        }
+      }),
+    );
     return sortEvents(events.filter((event) => event !== null));
   }
 
