@@ -6,14 +6,13 @@ compatibility_flags = [ "nodejs_compat" ]
 [assets]
 directory = "./public/"
 
-[durable_objects]
-bindings = [
-  { class_name = "Relay", name = "RELAY" },
-]
-
 [[migrations]]
 new_classes = ["Relay"]
 tag = "v1"
+
+[[migrations]]
+deleted_classes = ["Relay"]
+tag = "v2"
 
 [[kv_namespaces]]
 binding = "events"
