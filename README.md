@@ -42,8 +42,6 @@ npm run dev
 
 ## Deploy
 
-Cloudflare Workers Paid plan is required for [Durable Objects](https://developers.cloudflare.com/durable-objects/).
-
 ```shell
 npm run deploy
 ```
