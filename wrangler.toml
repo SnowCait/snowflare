@@ -12,16 +12,8 @@ bindings = [
 ]
 
 [[migrations]]
-new_classes = ["Relay"]
-tag = "v1"
-
-[[migrations]]
-deleted_classes = ["Relay"]
-tag = "v2"
-
-[[migrations]]
 new_sqlite_classes = ["Relay"]
-tag = "v3"
+tag = "v1"
 
 [[kv_namespaces]]
 binding = "events"
