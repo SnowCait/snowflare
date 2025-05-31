@@ -5,6 +5,10 @@ export type Bindings = {
   events: KVNamespace;
   accounts: KVNamespace;
   DB: D1Database;
+  API_TOKEN: string;
+  ACCOUNT_ID: string;
+  KV_ID_EVENTS: string;
+  LOCAL?: string;
 };
 
 export type Variables = {

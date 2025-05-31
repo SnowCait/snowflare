@@ -9,6 +9,7 @@ import {
   tagsFilterRegExp,
 } from "../../../nostr";
 import { EventDeletion } from "nostr-tools/kinds";
+import Cloudflare from "cloudflare";
 
 export class KvD1EventRepository implements EventRepository {
   #env: Bindings;
@@ -169,21 +170,47 @@ export class KvD1EventRepository implements EventRepository {
   }
 
   async #findByIds(ids: string[]): Promise<Event[]> {
-    const events = await Promise.all(
-      ids.map(async (id) => {
-        try {
-          const json = await this.#env.events.get(id);
-          if (json === null) {
+    // Workaround: The local environment runs on Miniflare but cannot be accessed via the REST API.
+    if (this.#env.LOCAL === "true") {
+      const events = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const json = await this.#env.events.get(id);
+            if (json === null) {
+              return null;
+            }
+            return JSON.parse(json) as Event;
+          } catch (error) {
+            console.error("[json parse failed]", error, `(${ids.length})`);
             return null;
           }
-          return JSON.parse(json) as Event;
-        } catch (error) {
-          console.error("[json parse failed]", error, `(${ids.length})`);
-          return null;
-        }
-      }),
-    );
-    return sortEvents(events.filter((event) => event !== null));
+        }),
+      );
+      return sortEvents(events.filter((event) => event !== null));
+    } else {
+      const chunk = <T>(array: T[], size: number): T[][] =>
+        Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
+          array.slice(i * size, i * size + size),
+        );
+
+      const client = new Cloudflare({ apiToken: this.#env.API_TOKEN });
+      const events = await Promise.all(
+        chunk(ids, 100).map(async (ids: string[]): Promise<Event[]> => {
+          const response = await client.kv.namespaces.keys.bulkGet(
+            this.#env.KV_ID_EVENTS,
+            {
+              account_id: this.#env.ACCOUNT_ID,
+              keys: ids.slice(0, 100),
+              type: "json",
+            },
+          );
+          return Object.values(response?.values ?? {}).filter(
+            (v) => v !== null,
+          );
+        }),
+      );
+      return sortEvents(events.flat());
+    }
   }
 
   async #findByQuery(filter: Filter): Promise<Event[]> {
