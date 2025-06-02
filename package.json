@@ -22,7 +22,7 @@
     "nostr-typedef": "^0.13.0",
     "prettier": "^3.5.3",
     "typescript-eslint": "^8.18.1",
-    "vitest": "~3.0.9",
+    "vitest": "^3.1.4",
     "wrangler": "^4.7.2"
   }
 }
