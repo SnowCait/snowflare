@@ -6,14 +6,15 @@ import { HTTPException } from "hono/http-exception";
 import { nip98 } from "nostr-tools";
 import client from "./client";
 import { Account } from "./Account";
+import { createMiddleware } from "hono/factory";
 
 const app = new Hono<Env>();
 
-app.get("/", (c) => {
+app.get("/", async (c) => {
   if (c.req.header("Upgrade") === "websocket") {
     const id = c.env.RELAY.idFromName("relay");
     const stub = c.env.RELAY.get(id);
-    return stub.fetch(c.req.raw);
+    return await stub.fetch(c.req.raw);
   } else if (c.req.header("Accept") === "application/nostr+json") {
     c.header("Access-Control-Allow-Origin", "*");
     return c.json(nip11);
@@ -43,7 +44,7 @@ app.delete("/prune", async (c) => {
   return c.json({ deleted });
 });
 
-app.use("/register", async (c, next) => {
+const auth = createMiddleware(async (c, next) => {
   const token = c.req.header("Authorization");
   if (token === undefined) {
     throw new HTTPException(401);
@@ -59,6 +60,8 @@ app.use("/register", async (c, next) => {
     throw new HTTPException(401);
   }
 });
+
+app.use("/register", auth);
 
 app.get("/register", async (c) => {
   const pubkey = c.get("pubkey");
@@ -82,6 +85,33 @@ app.delete("/register", async (c) => {
   await new Account(pubkey, c.env).unregister();
   return new Response(null, { status: 204 });
 });
+
+//#region Maintenance
+
+app.use("/maintenance", auth);
+app.use("/maintenance", async (c, next) => {
+  const pubkey = c.get("pubkey");
+  if (pubkey !== nip11.pubkey) {
+    throw new HTTPException(403);
+  }
+  await next();
+});
+
+app.put("/maintenance", async (c) => {
+  const id = c.env.RELAY.idFromName("relay");
+  const stub = c.env.RELAY.get(id);
+  await stub.enableMaintenance();
+  return new Response(null, { status: 204 });
+});
+
+app.delete("/maintenance", async (c) => {
+  const id = c.env.RELAY.idFromName("relay");
+  const stub = c.env.RELAY.get(id);
+  await stub.disableMaintenance();
+  return new Response(null, { status: 204 });
+});
+
+//#endregion
 
 export default app;
 

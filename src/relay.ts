@@ -2,6 +2,8 @@ import { DurableObject } from "cloudflare:workers";
 import { Connection } from "./connection";
 import { config, nip11 } from "./config";
 import { sendAuthChallenge } from "./message/sender/auth";
+import { sendClosed } from "./message/sender/closed";
+import { sendNotice } from "./message/sender/notice";
 import { MessageHandlerFactory } from "./message/factory";
 import { Bindings } from "./app";
 import { EventRepository } from "./repository/event";
@@ -21,8 +23,16 @@ export class Relay extends DurableObject<Bindings> {
     );
   }
 
-  fetch(request: Request): Response {
+  async fetch(request: Request): Promise<Response> {
     console.debug("[relay fetch]");
+
+    const maintenance = await this.ctx.storage.get<boolean>("maintenance");
+    if (maintenance) {
+      return new Response(null, {
+        status: 503,
+        headers: { "Retry-After": `${3600}` }, // seconds
+      });
+    }
 
     const webSocketPair = new WebSocketPair();
     const { 0: client, 1: server } = webSocketPair;
@@ -140,4 +150,27 @@ export class Relay extends DurableObject<Bindings> {
   webSocketError(ws: WebSocket, error: unknown): void | Promise<void> {
     console.error("[ws error]", ws.readyState, error);
   }
+
+  //#region Maintenance
+
+  async enableMaintenance(): Promise<void> {
+    console.debug("[maintenance]", "enable");
+    await this.ctx.storage.put("maintenance", true);
+
+    for (const ws of this.ctx.getWebSockets()) {
+      const { subscriptions } = ws.deserializeAttachment() as Connection;
+      for (const [id] of subscriptions) {
+        sendClosed(ws, id, "error", "closed due to maintenance");
+      }
+      sendNotice(ws, "disconnected due to maintenance");
+      ws.close();
+    }
+  }
+
+  async disableMaintenance(): Promise<void> {
+    console.debug("[maintenance]", "disable");
+    await this.ctx.storage.delete("maintenance");
+  }
+
+  //#endregion
 }
