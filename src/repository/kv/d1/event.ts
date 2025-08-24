@@ -82,7 +82,7 @@ export class KvD1EventRepository implements EventRepository {
     const { results } = await this.#env.DB.prepare(
       `
       SELECT LOWER(HEX(id)) as id, created_at FROM events
-      WHERE kind = ? AND pubkey = UNHEX(?) AND EXISTS(SELECT 1 FROM tags WHERE events.id = tags.id AND tags.name = "d" AND tags.value = ?)
+      WHERE kind = ? AND pubkey = UNHEX(?) AND EXISTS(SELECT 1 FROM json_each(json_extract(tags, '$.d')) WHERE json_each.value = ?)
       ORDER BY created_at DESC
       `,
     )
@@ -148,14 +148,9 @@ export class KvD1EventRepository implements EventRepository {
       return;
     }
 
-    const result = await this.#env.DB.batch([
-      this.#env.DB.prepare(
-        `DELETE FROM events WHERE id IN (${ids.map((id) => `UNHEX("${id}")`).join(",")})`,
-      ),
-      this.#env.DB.prepare(
-        `DELETE FROM tags WHERE id IN (${ids.map((id) => `UNHEX("${id}")`).join(",")})`,
-      ),
-    ]);
+    const result = await this.#env.DB.prepare(
+      `DELETE FROM events WHERE id IN (${ids.map((id) => `UNHEX("${id}")`).join(",")})`,
+    ).run<void>();
     console.debug("[delete result]", { result });
 
     for (const id of ids) {
