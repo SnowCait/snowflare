@@ -19,6 +19,7 @@ export class KvD1EventRepository implements EventRepository {
   }
 
   async save(event: Event, ipAddress: string | null): Promise<void> {
+    console.debug("[save event]", { event });
     await this.#saveToKV(event, ipAddress);
     await this.#saveToD1(event); // Execute after KV
   }
@@ -30,26 +31,31 @@ export class KvD1EventRepository implements EventRepository {
   }
 
   async #saveToD1(event: Event): Promise<void> {
-    const statements: D1PreparedStatement[] = [];
-    statements.push(
-      this.#env.DB.prepare(
-        "INSERT INTO events VALUES (UNHEX(?), UNHEX(?), ?, ?)",
-      ).bind(event.id, event.pubkey, event.kind, event.created_at),
-    );
-    for (const [name, value] of event.tags.filter(
+    const indexedTags = event.tags.filter(
       ([name, value]) =>
         tagsFilterRegExp.test(`#${name}`) && typeof value === "string",
-    )) {
-      statements.push(
-        this.#env.DB.prepare(
-          "INSERT INTO tags VALUES (UNHEX(?), ?, ?, ? , ?)",
-        ).bind(event.id, event.kind, name, value, event.created_at),
-      );
-    }
+    );
+    const indexedTagsMap = indexedTags.reduce((tags, [name, value]) => {
+      const values = tags.get(name) ?? [];
+      if (!values.includes(value)) {
+        values.push(value);
+      }
+      return tags.set(name, values);
+    }, new Map<string, string[]>());
+    const result = await this.#env.DB.prepare(
+      "INSERT INTO events (id, pubkey, kind, tags, created_at) VALUES (UNHEX(?1), UNHEX(?2), ?3, json(?4), ?5)",
+    )
+      .bind(
+        event.id,
+        event.pubkey,
+        event.kind,
+        indexedTagsMap.size > 0
+          ? JSON.stringify(Object.fromEntries(indexedTagsMap))
+          : null,
+        event.created_at,
+      )
+      .run<void>();
 
-    console.debug("[save event]", { event });
-
-    const result = await this.#env.DB.batch<void>(statements);
     console.debug("[save result]", { result });
   }
 
@@ -245,7 +251,6 @@ export class KvD1EventRepository implements EventRepository {
       key.startsWith("#"),
     );
     if (tagsFilter.length > 0) {
-      const tagsWheres: string[] = [];
       for (const [key, values] of tagsFilter) {
         // For type inference
         if (
@@ -258,19 +263,16 @@ export class KvD1EventRepository implements EventRepository {
 
         const uniqueValues = [...new Set(values)];
         if (hexTagKeys.includes(key)) {
-          tagsWheres.push(
-            `(tags.name = "${key[1]}" AND tags.value IN (${uniqueValues.map((v) => `"${v}"`).join(",")}))`,
+          wheres.push(
+            `EXISTS(SELECT 1 FROM json_each(json_extract(tags, '$.${key[1]}')) WHERE json_each.value IN (${uniqueValues.map((v) => `"${v}"`).join(",")}))`,
           );
         } else {
-          tagsWheres.push(
-            `(tags.name = "${key[1]}" AND tags.value IN (${uniqueValues.map(() => "?").join(",")}))`,
+          wheres.push(
+            `EXISTS(SELECT 1 FROM json_each(json_extract(tags, '$.${key[1]}')) WHERE json_each.value IN (${uniqueValues.map(() => "?").join(",")}))`,
           );
           params.push(...uniqueValues);
         }
       }
-      wheres.push(
-        `EXISTS(SELECT 1 FROM tags WHERE events.id = tags.id AND (${tagsWheres.join(" AND ")}))`,
-      );
     }
 
     // D1 limit

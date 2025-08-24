@@ -25,7 +25,7 @@ npx wrangler d1 create snowflare-events
 Database:
 
 ```shell
-npx wrangler d1 execute snowflare-events --local --file=./src/repository/kv/d1/schema.create.sql
+npx wrangler d1 migrations apply snowflare-events --local
 ```
 
 Environment variables:
@@ -44,7 +44,7 @@ LOCAL=true
 Database:
 
 ```shell
-npx wrangler d1 execute snowflare-events --remote --file=./src/repository/kv/d1/schema.create.sql
+npx wrangler d1 migrations apply snowflare-events --remote
 ```
 
 Environment variables:
@@ -68,6 +68,14 @@ npm run dev
 ```shell
 npm run deploy
 ```
+
+## Export
+
+```shell
+npx wrangler d1 export snowflare-events --local --output=./backup.local.sql
+```
+
+When running in production, replace `local` with `remote`. Note that there will be rows read.
 
 ## Assets and libraries
 
