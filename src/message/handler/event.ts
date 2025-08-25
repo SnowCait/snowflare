@@ -6,7 +6,7 @@ import { EventRepository } from "../../repository/event";
 import {
   EventDeletion,
   isEphemeralKind,
-  isParameterizedReplaceableKind,
+  isAddressableKind,
   isReplaceableKind,
 } from "nostr-tools/kinds";
 import { sendAuthChallenge } from "../sender/auth";
@@ -80,7 +80,7 @@ export class EventMessageHandler implements MessageHandler {
         this.#event,
         connection.ipAddress,
       );
-    } else if (isParameterizedReplaceableKind(this.#event.kind)) {
+    } else if (isAddressableKind(this.#event.kind)) {
       if (
         !this.#event.tags.some(
           ([name, value]) => name === "d" && typeof value === "string",
