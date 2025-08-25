@@ -12,8 +12,7 @@ const app = new Hono<Env>();
 
 app.get("/", async (c) => {
   if (c.req.header("Upgrade") === "websocket") {
-    const id = c.env.RELAY.idFromName("relay");
-    const stub = c.env.RELAY.get(id);
+    const stub = c.env.RELAY.getByName("relay");
     return await stub.fetch(c.req.raw);
   } else if (c.req.header("Accept") === "application/nostr+json") {
     c.header("Access-Control-Allow-Origin", "*");
@@ -31,15 +30,13 @@ app.options("/", (c) => {
 });
 
 app.get("/metrics", async (c) => {
-  const id = c.env.RELAY.idFromName("relay");
-  const stub = c.env.RELAY.get(id);
+  const stub = c.env.RELAY.getByName("relay");
   const metrics = await stub.metrics();
   return c.json(metrics);
 });
 
 app.delete("/prune", async (c) => {
-  const id = c.env.RELAY.idFromName("relay");
-  const stub = c.env.RELAY.get(id);
+  const stub = c.env.RELAY.getByName("relay");
   const deleted = await stub.prune();
   return c.json({ deleted });
 });
@@ -98,15 +95,13 @@ app.use("/maintenance", async (c, next) => {
 });
 
 app.put("/maintenance", async (c) => {
-  const id = c.env.RELAY.idFromName("relay");
-  const stub = c.env.RELAY.get(id);
+  const stub = c.env.RELAY.getByName("relay");
   await stub.enableMaintenance();
   return new Response(null, { status: 204 });
 });
 
 app.delete("/maintenance", async (c) => {
-  const id = c.env.RELAY.idFromName("relay");
-  const stub = c.env.RELAY.get(id);
+  const stub = c.env.RELAY.getByName("relay");
   await stub.disableMaintenance();
   return new Response(null, { status: 204 });
 });
