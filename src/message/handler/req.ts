@@ -48,12 +48,12 @@ export class ReqMessageHandler implements MessageHandler {
     }
 
     const connection = ws.deserializeAttachment() as Connection;
-    if (connection.subscriptions.has(this.#subscriptionId)) {
-      const key = connection.subscriptions.get(this.#subscriptionId)!;
-      await ctx.storage.delete(key);
-    } else if (
-      connection.subscriptions.size >= nip11.limitation.max_subscriptions
-    ) {
+    const subscriptions =
+      (await ctx.storage.get<Map<string, Filter[]>>(connection.id)) ??
+      new Map<string, Filter[]>();
+    console.debug("[subscriptions]", connection.id, subscriptions);
+    subscriptions.set(this.#subscriptionId, [this.#filter]);
+    if (subscriptions.size > nip11.limitation.max_subscriptions) {
       console.debug("[too many subscriptions]", { connection });
       ws.send(
         JSON.stringify([
@@ -65,19 +65,7 @@ export class ReqMessageHandler implements MessageHandler {
       return;
     }
 
-    const key = crypto.randomUUID();
-    await ctx.storage.put(key, this.#filter);
-    connection.subscriptions.set(this.#subscriptionId, key);
-    try {
-      ws.serializeAttachment(connection);
-    } catch (error) {
-      console.error(
-        `[ws serialize attachment error] ${error} (${connection.subscriptions.size})`,
-        {
-          connection,
-        },
-      );
-    }
+    await ctx.storage.put(connection.id, subscriptions);
 
     const events = await this.#eventsRepository.find(this.#filter);
     for (const event of events) {

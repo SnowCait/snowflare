@@ -113,14 +113,18 @@ export class EventMessageHandler implements MessageHandler {
   }
 
   async #broadcast(ctx: DurableObjectState): Promise<void> {
-    const filters = await ctx.storage.list<Filter>();
+    const subscriptionsMap = await ctx.storage.list<Map<string, Filter[]>>();
+    subscriptionsMap.delete("maintenance"); // Exclude non-connections
+    const availableConnectionIds = new Set<string>();
     for (const ws of ctx.getWebSockets()) {
-      const { subscriptions } = ws.deserializeAttachment() as Connection;
-      for (const [id, key] of subscriptions) {
-        const filter = filters.get(key);
-        if (filter === undefined) {
-          await ctx.storage.delete(key);
-        } else if (matchFilter(filter, this.#event)) {
+      const { id } = ws.deserializeAttachment() as Connection;
+      availableConnectionIds.add(id);
+      const subscriptions = subscriptionsMap.get(id);
+      if (subscriptions === undefined) {
+        continue;
+      }
+      for (const [id, filters] of subscriptions) {
+        if (filters.some((filter) => matchFilter(filter, this.#event))) {
           ws.send(JSON.stringify(["EVENT", id, this.#event]));
         }
       }
