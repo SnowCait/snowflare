@@ -35,6 +35,18 @@ export class ReqMessageHandler implements MessageHandler {
       return;
     }
 
+    if (this.#filters.length > nip11.limitation.max_filters) {
+      console.debug("[too many filters]", { filters: this.#filters });
+      ws.send(
+        JSON.stringify([
+          "CLOSED",
+          this.#subscriptionId,
+          "unsupported: too many filters",
+        ]),
+      );
+      return;
+    }
+
     if (this.#filters.some((filter) => !validateFilter(filter))) {
       console.debug("[unsupported filters]", { filters: this.#filters });
       ws.send(
