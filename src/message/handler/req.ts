@@ -1,4 +1,4 @@
-import { Filter, sortEvents } from "nostr-tools";
+import { Event, Filter, sortEvents } from "nostr-tools";
 import { MessageHandler } from "../handler";
 import { Connection } from "../../connection";
 import { EventRepository } from "../../repository/event";
@@ -70,8 +70,16 @@ export class ReqMessageHandler implements MessageHandler {
     const promises = this.#filters.map((filter) =>
       this.#eventsRepository.find(filter),
     );
-    const events = await Promise.all(promises);
-    for (const event of sortEvents(events.flat())) {
+    const possibleDuplicateEvents = await Promise.all(promises);
+    const events = possibleDuplicateEvents
+      .flat()
+      .reduce((distinctEvents, event): Event[] => {
+        if (!distinctEvents.some((e) => e.id === event.id)) {
+          distinctEvents.push(event);
+        }
+        return distinctEvents;
+      }, []);
+    for (const event of sortEvents(events)) {
       ws.send(JSON.stringify(["EVENT", this.#subscriptionId, event]));
     }
 
