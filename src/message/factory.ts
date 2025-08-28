@@ -12,7 +12,7 @@ export class MessageHandlerFactory {
     eventsRepository: EventRepository,
   ): MessageHandler | undefined {
     try {
-      const [type, idOrEvent, filter] = JSON.parse(message) as [
+      const [type, idOrEvent, ...filters] = JSON.parse(message) as [
         string,
         string | Event,
         Filter,
@@ -25,10 +25,14 @@ export class MessageHandlerFactory {
           return new EventMessageHandler(idOrEvent, eventsRepository);
         }
         case "REQ": {
-          if (typeof idOrEvent !== "string" || typeof filter !== "object") {
+          if (
+            typeof idOrEvent !== "string" ||
+            filters.length < 1 ||
+            filters.some((filter) => typeof filter !== "object")
+          ) {
             return;
           }
-          return new ReqMessageHandler(idOrEvent, filter, eventsRepository);
+          return new ReqMessageHandler(idOrEvent, filters, eventsRepository);
         }
         case "CLOSE": {
           if (typeof idOrEvent !== "string") {

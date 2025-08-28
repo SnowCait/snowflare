@@ -1,4 +1,4 @@
-import { Filter } from "nostr-tools";
+import { Filter, sortEvents } from "nostr-tools";
 import { MessageHandler } from "../handler";
 import { Connection } from "../../connection";
 import { EventRepository } from "../../repository/event";
@@ -7,21 +7,21 @@ import { nip11 } from "../../config";
 
 export class ReqMessageHandler implements MessageHandler {
   #subscriptionId: string;
-  #filter: Filter;
+  #filters: Filter[];
   #eventsRepository: EventRepository;
 
   constructor(
     subscriptionId: string,
-    filter: Filter,
+    filters: Filter[],
     eventsRepository: EventRepository,
   ) {
     this.#subscriptionId = subscriptionId;
-    this.#filter = filter;
+    this.#filters = filters;
     this.#eventsRepository = eventsRepository;
   }
 
   async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
-    console.debug("[REQ]", { filter: this.#filter });
+    console.debug("[REQ]", { filters: this.#filters });
 
     if (this.#subscriptionId.length > nip11.limitation.max_subid_length) {
       console.debug("[too long subscription id]", this.#subscriptionId);
@@ -35,13 +35,13 @@ export class ReqMessageHandler implements MessageHandler {
       return;
     }
 
-    if (!validateFilter(this.#filter)) {
-      console.debug("[unsupported filter]", { filter: this.#filter });
+    if (this.#filters.some((filter) => !validateFilter(filter))) {
+      console.debug("[unsupported filters]", { filters: this.#filters });
       ws.send(
         JSON.stringify([
           "CLOSED",
           this.#subscriptionId,
-          "unsupported: filter contains unsupported elements",
+          "unsupported: filters contain unsupported elements",
         ]),
       );
       return;
@@ -52,7 +52,7 @@ export class ReqMessageHandler implements MessageHandler {
       (await ctx.storage.get<Map<string, Filter[]>>(connection.id)) ??
       new Map<string, Filter[]>();
     console.debug("[subscriptions]", connection.id, subscriptions);
-    subscriptions.set(this.#subscriptionId, [this.#filter]);
+    subscriptions.set(this.#subscriptionId, this.#filters);
     if (subscriptions.size > nip11.limitation.max_subscriptions) {
       console.debug("[too many subscriptions]", { connection });
       ws.send(
@@ -67,8 +67,11 @@ export class ReqMessageHandler implements MessageHandler {
 
     await ctx.storage.put(connection.id, subscriptions);
 
-    const events = await this.#eventsRepository.find(this.#filter);
-    for (const event of events) {
+    const promises = this.#filters.map((filter) =>
+      this.#eventsRepository.find(filter),
+    );
+    const events = await Promise.all(promises);
+    for (const event of sortEvents(events.flat())) {
       ws.send(JSON.stringify(["EVENT", this.#subscriptionId, event]));
     }
 
