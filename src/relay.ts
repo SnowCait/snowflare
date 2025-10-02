@@ -150,7 +150,6 @@ export class Relay extends DurableObject<Bindings> {
 
   async #cleanUp(ws: WebSocket): Promise<void> {
     const { id } = ws.deserializeAttachment() as Connection;
-    console.debug("[delete connection]", id);
     await this.ctx.storage.delete(id);
   }
 

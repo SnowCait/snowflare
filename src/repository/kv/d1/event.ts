@@ -284,16 +284,19 @@ export class KvD1EventRepository implements EventRepository {
         ? [select, "WHERE", wheres.join(" AND "), orderBy, limit]
         : [select, orderBy, limit]
     ).join(" ");
-    console.debug("[find SQL]", query, { params, filter });
 
     const result = await this.#env.DB.prepare(query)
       .bind(...params)
       .run<{ id: string }>();
-    console.debug("[find result]", {
-      ...result,
-      results: result.results.length,
-      filter,
-    });
+    if (result.meta.rows_read >= 1000) {
+      console.debug("[find result]", {
+        ...result,
+        results: result.results.length,
+        filter,
+        query,
+        params,
+      });
+    }
 
     return this.#findByIds(result.results.map(({ id }) => id));
   }
