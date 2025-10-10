@@ -1,4 +1,6 @@
-import { Filter } from "nostr-tools";
+import { Event } from "nostr-tools/core";
+import { Filter, matchFilter } from "nostr-tools/filter";
+import { NostrConnect } from "nostr-tools/kinds";
 import { nip11 } from "./config";
 
 export const hexRegExp = /^[0-9a-z]{64}$/;
@@ -98,6 +100,28 @@ export function validateFilter(filter: Filter): boolean {
           (!hexTagKeys.includes(key) || value.every((v) => hexRegExp.test(v))),
       )
   ) {
+    return false;
+  }
+
+  // NIP-46
+  if (
+    filter.kinds !== undefined &&
+    filter.kinds.includes(NostrConnect) &&
+    filter["#p"] === undefined
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+export function broadcastable(filter: Filter, event: Event): boolean {
+  if (!matchFilter(filter, event)) {
+    return false;
+  }
+
+  // NIP-46
+  if (event.kind === NostrConnect && filter["#p"] === undefined) {
     return false;
   }
 

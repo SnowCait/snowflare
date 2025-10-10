@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { validateFilter } from "./nostr";
+import { broadcastable, validateFilter } from "./nostr";
+import { finalizeEvent, generateSecretKey } from "nostr-tools/pure";
+import { NostrConnect } from "nostr-tools/kinds";
 
 describe("validate filter", () => {
-  it("{}", () => {
+  it("all", () => {
     expect(validateFilter({})).toBe(true);
   });
   it("ids", () => {
@@ -125,5 +127,92 @@ describe("validate filter", () => {
   });
   it("search", () => {
     expect(validateFilter({ search: "test" })).toBe(false); // Unsupported
+  });
+  it("nostr connect", () => {
+    expect(
+      validateFilter({
+        kinds: [NostrConnect],
+        "#p": [
+          "0000000000000000000000000000000000000000000000000000000000000000",
+        ],
+      }),
+    ).toBe(true);
+    expect(
+      validateFilter({
+        "#p": [
+          "0000000000000000000000000000000000000000000000000000000000000000",
+        ],
+      }),
+    ).toBe(true);
+    expect(
+      validateFilter({
+        kinds: [NostrConnect],
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("broadcastable", () => {
+  const seckey = generateSecretKey();
+  const normalEvent = finalizeEvent(
+    { kind: 1, content: "", tags: [], created_at: 0 },
+    seckey,
+  );
+  const nostrConnectEvent = finalizeEvent(
+    {
+      kind: NostrConnect,
+      content: "",
+      tags: [
+        [
+          "p",
+          "0000000000000000000000000000000000000000000000000000000000000000",
+        ],
+      ],
+      created_at: 0,
+    },
+    seckey,
+  );
+
+  it("all", () => {
+    expect(broadcastable({}, normalEvent)).toBe(true);
+    expect(broadcastable({}, nostrConnectEvent)).toBe(false);
+  });
+
+  it("nostr connect", () => {
+    expect(
+      broadcastable(
+        {
+          kinds: [NostrConnect],
+          "#p": [
+            "0000000000000000000000000000000000000000000000000000000000000000",
+          ],
+        },
+        nostrConnectEvent,
+      ),
+    ).toBe(true);
+    expect(
+      broadcastable(
+        {
+          "#p": [
+            "0000000000000000000000000000000000000000000000000000000000000000",
+          ],
+        },
+        nostrConnectEvent,
+      ),
+    ).toBe(true);
+    expect(broadcastable({ kinds: [NostrConnect] }, nostrConnectEvent)).toBe(
+      false,
+    );
+    expect(
+      broadcastable(
+        {
+          kinds: [NostrConnect],
+          "#p": [
+            "11111111111111111111111111111111111111111111111111111111111111111",
+          ],
+        },
+        nostrConnectEvent,
+      ),
+    ).toBe(false);
   });
 });

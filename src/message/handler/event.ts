@@ -10,6 +10,7 @@ import {
   isReplaceableKind,
 } from "nostr-tools/kinds";
 import { sendAuthChallenge } from "../sender/auth";
+import { broadcastable } from "../../nostr";
 
 export class EventMessageHandler implements MessageHandler {
   #event: Event;
@@ -124,7 +125,7 @@ export class EventMessageHandler implements MessageHandler {
         continue;
       }
       for (const [id, filters] of subscriptions) {
-        if (filters.some((filter) => matchFilter(filter, this.#event))) {
+        if (filters.some((filter) => broadcastable(filter, this.#event))) {
           ws.send(JSON.stringify(["EVENT", id, this.#event]));
         }
       }
