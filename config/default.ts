@@ -15,7 +15,7 @@ export default {
       max_filters: 10,
       max_limit: 500,
       max_subid_length: 50,
-      auth_required: true,
+      auth_required: false,
       restricted_writes: true,
     },
   },

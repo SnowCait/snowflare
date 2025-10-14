@@ -1,4 +1,4 @@
-import { Event, Filter, matchFilter, verifyEvent } from "nostr-tools";
+import { Event, Filter, verifyEvent } from "nostr-tools";
 import { MessageHandler } from "../handler";
 import { Connection } from "../../connection";
 import { nip11 } from "../../config";
@@ -30,50 +30,37 @@ export class EventMessageHandler implements MessageHandler {
     }
 
     const connection = ws.deserializeAttachment() as Connection;
+    const { auth } = connection;
 
-    if (nip11.limitation.auth_required) {
-      const { auth } = connection;
-      if (auth?.pubkey !== this.#event.pubkey) {
+    if (auth === undefined || auth.pubkey !== this.#event.pubkey) {
+      const isProtected = this.#event.tags.some(([name]) => name === "-");
+
+      if (
+        nip11.limitation.auth_required ||
+        nip11.limitation.restricted_writes ||
+        isProtected
+      ) {
+        if (auth?.pubkey === undefined) {
+          const challenge = sendAuthChallenge(ws);
+          connection.auth = {
+            challenge,
+            challengedAt: Date.now(),
+          };
+          ws.serializeAttachment(connection);
+        }
+        const message = isProtected
+          ? "this event may only be published by its author"
+          : "we only accept events from registered users";
         ws.send(
           JSON.stringify([
             "OK",
             this.#event.id,
             false,
-            "auth-required: please send challenge",
+            `auth-required: ${message}`,
           ]),
         );
         return;
       }
-    } else if (
-      this.#event.tags.some(([name]) => name === "-") &&
-      connection.auth?.pubkey !== this.#event.pubkey
-    ) {
-      if (connection.auth?.pubkey === undefined) {
-        const challenge = sendAuthChallenge(ws);
-        connection.auth = {
-          challenge,
-          challengedAt: Date.now(),
-        };
-        ws.serializeAttachment(connection);
-        ws.send(
-          JSON.stringify([
-            "OK",
-            this.#event.id,
-            false,
-            "auth-required: please send challenge",
-          ]),
-        );
-      } else {
-        ws.send(
-          JSON.stringify([
-            "OK",
-            this.#event.id,
-            false,
-            "auth-required: this event may only be published by its author",
-          ]),
-        );
-      }
-      return;
     }
 
     if (isReplaceableKind(this.#event.kind)) {

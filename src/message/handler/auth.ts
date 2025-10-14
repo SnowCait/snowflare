@@ -29,7 +29,7 @@ export class AuthMessageHandler implements MessageHandler {
       return;
     }
 
-    if (nip11.limitation.auth_required) {
+    if (nip11.limitation.auth_required || nip11.limitation.restricted_writes) {
       const registered = await new Account(this.#event.pubkey, env).exists();
       if (!registered) {
         ws.send(
