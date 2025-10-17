@@ -129,8 +129,6 @@ export class Relay extends DurableObject<Bindings> {
       return;
     }
 
-    console.debug("[ws message]", message);
-
     const handler = MessageHandlerFactory.create(
       message,
       this.#eventsRepository,
