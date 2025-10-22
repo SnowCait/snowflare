@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "snowflare",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-12-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "%DB_ID%",
+      "database_name": "snowflare-events",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "events",
+      "id": "%KV_ID_EVENTS%",
+    },
+    {
+      "binding": "accounts",
+      "id": "%KV_ID_ACCOUNTS%",
+    },
+  ],
+  "migrations": [
+    {
+      "new_sqlite_classes": ["Relay"],
+      "tag": "v1",
+    },
+  ],
+  "assets": {
+    "directory": "./public/",
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "Relay",
+        "name": "RELAY",
+      },
+    ],
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+  },
+}
