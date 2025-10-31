@@ -22,9 +22,8 @@ export class EventMessageHandler implements MessageHandler {
   }
 
   async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
-    console.debug("[EVENT]", { event: this.#event });
-
     if (!verifyEvent(this.#event)) {
+      console.debug("[EVENT invalid]", { event: this.#event });
       ws.send(JSON.stringify(["NOTICE", "invalid: event"]));
       return;
     }
@@ -74,6 +73,7 @@ export class EventMessageHandler implements MessageHandler {
           ([name, value]) => name === "d" && typeof value === "string",
         )
       ) {
+        console.debug("[EVENT missing d tag]", { event: this.#event });
         ws.send(
           JSON.stringify([
             "OK",

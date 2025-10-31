@@ -11,7 +11,6 @@ export class CloseMessageHandler implements MessageHandler {
 
   async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
     const connection = ws.deserializeAttachment() as Connection;
-    console.debug("[CLOSE]", connection.id, this.#subscriptionId);
     const subscriptions = await ctx.storage.get<Map<string, Filter[]>>(
       connection.id,
     );

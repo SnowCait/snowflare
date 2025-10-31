@@ -18,13 +18,12 @@ export class AuthMessageHandler implements MessageHandler {
     ws: WebSocket,
     env: Bindings,
   ): Promise<void> {
-    console.debug("[AUTH]", { event: this.#event });
-
     const connection = ws.deserializeAttachment() as Connection;
     if (
       connection.auth === undefined ||
       !Auth.Challenge.validate(this.#event, connection.auth, connection.url)
     ) {
+      console.debug("[AUTH invalid]", { event: this.#event });
       ws.send(JSON.stringify(["OK", this.#event.id, false, "invalid: auth"]));
       return;
     }
@@ -32,6 +31,7 @@ export class AuthMessageHandler implements MessageHandler {
     if (nip11.limitation.auth_required || nip11.limitation.restricted_writes) {
       const registered = await new Account(this.#event.pubkey, env).exists();
       if (!registered) {
+        console.debug("[AUTH restricted]", { event: this.#event });
         ws.send(
           JSON.stringify([
             "OK",
