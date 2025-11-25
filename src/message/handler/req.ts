@@ -34,7 +34,6 @@ export class ReqMessageHandler implements MessageHandler {
     }
 
     if (this.#filters.length > nip11.limitation.max_filters) {
-      console.debug("[too many filters]", { filters: this.#filters });
       ws.send(
         JSON.stringify([
           "CLOSED",
@@ -46,7 +45,6 @@ export class ReqMessageHandler implements MessageHandler {
     }
 
     if (this.#filters.some((filter) => !validateFilter(filter))) {
-      console.debug("[unsupported filters]", { filters: this.#filters });
       ws.send(
         JSON.stringify([
           "CLOSED",

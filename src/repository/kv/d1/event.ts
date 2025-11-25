@@ -288,7 +288,7 @@ export class KvD1EventRepository implements EventRepository {
     const result = await this.#env.DB.prepare(query)
       .bind(...params)
       .run<{ id: string }>();
-    if (result.meta.rows_read >= 1000) {
+    if (result.meta.rows_read >= 10000) {
       console.debug("[find result]", {
         ...result,
         results: result.results.length,
