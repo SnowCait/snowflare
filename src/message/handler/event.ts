@@ -31,7 +31,7 @@ export class EventMessageHandler implements MessageHandler {
     const connection = ws.deserializeAttachment() as Connection;
     const { auth } = connection;
 
-    if (auth === undefined || auth.pubkey !== this.#event.pubkey) {
+    if (auth === undefined || !connection.pubkeys.has(this.#event.pubkey)) {
       const isProtected = this.#event.tags.some(([name]) => name === "-");
 
       if (
@@ -39,14 +39,12 @@ export class EventMessageHandler implements MessageHandler {
         nip11.limitation.restricted_writes ||
         isProtected
       ) {
-        if (auth?.pubkey === undefined) {
-          const challenge = sendAuthChallenge(ws);
-          connection.auth = {
-            challenge,
-            challengedAt: Date.now(),
-          };
-          ws.serializeAttachment(connection);
-        }
+        const challenge = sendAuthChallenge(ws);
+        connection.auth = {
+          challenge,
+          challengedAt: Date.now(),
+        };
+        ws.serializeAttachment(connection);
         const message = isProtected
           ? "this event may only be published by its author"
           : "we only accept events from registered users";

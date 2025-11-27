@@ -30,6 +30,5 @@ export namespace Auth {
   export type Session = {
     challenge: string;
     challengedAt: number;
-    pubkey?: string;
   };
 }

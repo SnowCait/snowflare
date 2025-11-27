@@ -20,6 +20,7 @@ export default {
     },
   },
   auth_timeout: 600, // seconds
+  auth_limit: 5, // Within the Connection size limit
   default_limit: 50,
   repository_type: "kv-d1",
 } as const satisfies Config;

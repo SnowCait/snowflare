@@ -52,6 +52,7 @@ export class Relay extends DurableObject<Bindings> {
           challenge,
           challengedAt: Date.now(),
         },
+        pubkeys: new Set(),
       } satisfies Connection;
       server.serializeAttachment(connection);
     } else {
@@ -59,6 +60,7 @@ export class Relay extends DurableObject<Bindings> {
         id: connectionId,
         ipAddress,
         url: this.#convertToWebSocketUrl(request.url),
+        pubkeys: new Set(),
       } satisfies Connection;
       server.serializeAttachment(connection);
     }
