@@ -147,7 +147,7 @@ export class Relay extends DurableObject<Bindings> {
     wasClean: boolean,
   ): Promise<void> {
     console.debug("[ws close]", code, reason, wasClean, ws.readyState);
-    this.#cleanUp(ws);
+    await this.#cleanUp(ws);
   }
 
   async #cleanUp(ws: WebSocket): Promise<void> {
