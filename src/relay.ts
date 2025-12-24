@@ -100,7 +100,9 @@ export class Relay extends DurableObject<Bindings> {
   }
 
   async prune(): Promise<number> {
-    const connections = await this.ctx.storage.list<Map<string, Filter[]>>();
+    const connections = await this.ctx.storage.list<Map<string, Filter[]>>({
+      limit: 2000,
+    });
     connections.delete("maintenance"); // Exclude non-connections
     const availableConnectionIds = this.ctx
       .getWebSockets()
