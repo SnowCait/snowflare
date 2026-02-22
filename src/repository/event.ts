@@ -1,9 +1,16 @@
-import { Event, Filter } from "nostr-tools";
+import { NostrEvent } from "nostr-tools/core";
+import { Filter } from "nostr-tools/filter";
 
 export interface EventRepository {
-  save(event: Event, ipAddress: string | null): Promise<void>;
-  saveReplaceableEvent(event: Event, ipAddress: string | null): Promise<void>;
-  saveAddressableEvent(event: Event, ipAddress: string | null): Promise<void>;
-  deleteBy(event: Event): Promise<void>;
-  find(filter: Filter): Promise<Event[]>;
+  save(event: NostrEvent, ipAddress: string | null): Promise<void>;
+  saveReplaceableEvent(
+    event: NostrEvent,
+    ipAddress: string | null,
+  ): Promise<void>;
+  saveAddressableEvent(
+    event: NostrEvent,
+    ipAddress: string | null,
+  ): Promise<void>;
+  deleteBy(event: NostrEvent): Promise<void>;
+  find(filter: Filter): Promise<NostrEvent[]>;
 }

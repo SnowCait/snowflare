@@ -1,4 +1,5 @@
-import { Event, Filter, sortEvents } from "nostr-tools";
+import { NostrEvent, sortEvents } from "nostr-tools/core";
+import { Filter } from "nostr-tools/filter";
 import { MessageHandler } from "../handler";
 import { Connection } from "../../connection";
 import { EventRepository } from "../../repository/event";
@@ -84,7 +85,7 @@ export class ReqMessageHandler implements MessageHandler {
     const possibleDuplicateEvents = await Promise.all(promises);
     const events = possibleDuplicateEvents
       .flat()
-      .reduce((distinctEvents, event): Event[] => {
+      .reduce((distinctEvents, event): NostrEvent[] => {
         if (!distinctEvents.some((e) => e.id === event.id)) {
           distinctEvents.push(event);
         }

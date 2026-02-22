@@ -1,4 +1,4 @@
-import { Event } from "nostr-tools/core";
+import { NostrEvent } from "nostr-tools/core";
 import { Filter, matchFilter } from "nostr-tools/filter";
 import { NostrConnect } from "nostr-tools/kinds";
 import { nip11 } from "./config";
@@ -115,7 +115,7 @@ export function validateFilter(filter: Filter): boolean {
   return true;
 }
 
-export function broadcastable(filter: Filter, event: Event): boolean {
+export function broadcastable(filter: Filter, event: NostrEvent): boolean {
   if (!matchFilter(filter, event)) {
     return false;
   }

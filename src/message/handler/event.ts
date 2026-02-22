@@ -1,4 +1,5 @@
-import { Event, Filter, verifyEvent } from "nostr-tools";
+import { NostrEvent, verifyEvent } from "nostr-tools/pure";
+import { Filter } from "nostr-tools/filter";
 import { MessageHandler } from "../handler";
 import { Connection } from "../../connection";
 import { nip11 } from "../../config";
@@ -13,10 +14,10 @@ import { sendAuthChallenge } from "../sender/auth";
 import { broadcastable } from "../../nostr";
 
 export class EventMessageHandler implements MessageHandler {
-  #event: Event;
+  #event: NostrEvent;
   #eventsRepository: EventRepository;
 
-  constructor(event: Event, eventsRepository: EventRepository) {
+  constructor(event: NostrEvent, eventsRepository: EventRepository) {
     this.#event = event;
     this.#eventsRepository = eventsRepository;
   }

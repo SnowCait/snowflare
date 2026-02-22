@@ -1,4 +1,5 @@
-import { Event, Filter } from "nostr-tools";
+import { NostrEvent } from "nostr-tools/core";
+import { Filter } from "nostr-tools/filter";
 import { MessageHandler } from "./handler";
 import { EventMessageHandler } from "./handler/event";
 import { ReqMessageHandler } from "./handler/req";
@@ -14,7 +15,7 @@ export class MessageHandlerFactory {
     try {
       const [type, idOrEvent, ...filters] = JSON.parse(message) as [
         string,
-        string | Event,
+        string | NostrEvent,
         Filter,
       ];
       switch (type) {

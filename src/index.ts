@@ -3,7 +3,7 @@ import { Relay } from "./relay";
 import { nip11 } from "./config";
 import { Env } from "./app";
 import { HTTPException } from "hono/http-exception";
-import { nip98 } from "nostr-tools";
+import * as nip98 from "nostr-tools/nip98";
 import client from "./client";
 import { Account } from "./Account";
 import { createMiddleware } from "hono/factory";

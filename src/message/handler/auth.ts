@@ -1,4 +1,4 @@
-import { Event } from "nostr-tools";
+import { NostrEvent } from "nostr-tools/core";
 import { MessageHandler } from "../handler";
 import { config, nip11 } from "../../config";
 import { Auth } from "../../auth";
@@ -7,9 +7,9 @@ import { Account } from "../../Account";
 import { Bindings } from "../../app";
 
 export class AuthMessageHandler implements MessageHandler {
-  #event: Event;
+  #event: NostrEvent;
 
-  constructor(event: Event) {
+  constructor(event: NostrEvent) {
     this.#event = event;
   }
 

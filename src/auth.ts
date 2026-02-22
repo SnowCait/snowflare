@@ -1,4 +1,4 @@
-import { Event } from "nostr-tools";
+import { NostrEvent } from "nostr-tools/core";
 import { config } from "./config";
 import { normalizeURL } from "nostr-tools/utils";
 
@@ -8,7 +8,7 @@ export namespace Auth {
       return crypto.randomUUID();
     }
 
-    static validate(event: Event, auth: Session, url: string): boolean {
+    static validate(event: NostrEvent, auth: Session, url: string): boolean {
       if (event.kind !== 22242) {
         return false;
       }

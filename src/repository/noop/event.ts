@@ -1,4 +1,4 @@
-import { Event } from "nostr-tools";
+import { NostrEvent } from "nostr-tools/core";
 import { EventRepository } from "../event";
 
 export class NoopEventRepository implements EventRepository {
@@ -10,7 +10,7 @@ export class NoopEventRepository implements EventRepository {
 
   async deleteBy(): Promise<void> {}
 
-  async find(): Promise<Event[]> {
+  async find(): Promise<NostrEvent[]> {
     return [];
   }
 }
