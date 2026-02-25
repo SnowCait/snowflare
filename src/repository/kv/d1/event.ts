@@ -7,9 +7,10 @@ import {
   hexRegExp,
   hexTagKeys,
   idsFilterKeys,
+  RequestToVanish,
   tagsFilterRegExp,
 } from "../../../nostr";
-import { EventDeletion } from "nostr-tools/kinds";
+import { EventDeletion, GiftWrap } from "nostr-tools/kinds";
 import Cloudflare from "cloudflare";
 
 export class KvD1EventRepository implements EventRepository {
@@ -138,7 +139,10 @@ export class KvD1EventRepository implements EventRepository {
     ).run<{ id: string; pubkey: string; kind: number }>();
     const deleteIds = results
       .filter(
-        ({ pubkey, kind }) => pubkey === event.pubkey && kind !== EventDeletion,
+        ({ pubkey, kind }) =>
+          pubkey === event.pubkey &&
+          kind !== EventDeletion &&
+          kind !== RequestToVanish,
       )
       .map(({ id }) => id);
     await this.#delete(deleteIds);
@@ -157,6 +161,24 @@ export class KvD1EventRepository implements EventRepository {
     for (const id of ids) {
       await this.#env.events.delete(id);
     }
+  }
+
+  async vanishBy(event: NostrEvent): Promise<void> {
+    const result = await this.#env.DB.prepare(
+      "DELETE FROM events WHERE pubkey = UNHEX(?) AND created_at <= ? AND kind NOT IN (?, ?)",
+    )
+      .bind(event.pubkey, event.created_at, EventDeletion, RequestToVanish)
+      .run<void>();
+    console.debug("[vanish result]", { result });
+    const giftWrapResult = await this.#env.DB.prepare(
+      `DELETE FROM events WHERE
+        EXISTS(SELECT 1 FROM json_each(json_extract(tags, '$.p')) WHERE json_each.value = ?) AND
+        created_at <= ? AND
+        kind = ?`,
+    )
+      .bind(event.pubkey, event.created_at, GiftWrap)
+      .run<void>();
+    console.debug("[vanish result gift wrap]", { result: giftWrapResult });
   }
 
   async find(filter: Filter): Promise<NostrEvent[]> {

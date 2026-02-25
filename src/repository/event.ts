@@ -12,5 +12,6 @@ export interface EventRepository {
     ipAddress: string | null,
   ): Promise<void>;
   deleteBy(event: NostrEvent): Promise<void>;
+  vanishBy(event: NostrEvent): Promise<void>;
   find(filter: Filter): Promise<NostrEvent[]>;
 }

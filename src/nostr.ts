@@ -3,7 +3,7 @@ import { Filter, matchFilter } from "nostr-tools/filter";
 import { NostrConnect } from "nostr-tools/kinds";
 import { nip11 } from "./config";
 
-export const hexRegExp = /^[0-9a-z]{64}$/;
+export const hexRegExp = /^[0-9a-f]{64}$/;
 export const tagsFilterRegExp = /^#[a-zA-Z]$/;
 
 export const idsFilterKeys: string[] = ["ids", "limit"] satisfies Array<
@@ -127,3 +127,21 @@ export function broadcastable(filter: Filter, event: NostrEvent): boolean {
 
   return true;
 }
+
+//#region NIP-62 Request to Vanish
+
+export const RequestToVanish = 62;
+export type RequestToVanish = typeof RequestToVanish;
+
+export function isVanishTarget(event: NostrEvent, url: string): boolean {
+  const relays = event.tags
+    .filter((tag) => tag[0] === "relay" && typeof tag[1] === "string")
+    .map(([, url]) => url);
+  return relays.some(
+    (relay) =>
+      relay === "ALL_RELAYS" ||
+      (URL.canParse(relay) && new URL(relay).origin === new URL(url).origin),
+  );
+}
+
+//#endregion

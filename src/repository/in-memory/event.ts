@@ -2,8 +2,8 @@ import { NostrEvent, sortEvents } from "nostr-tools/core";
 import { Filter, matchFilter } from "nostr-tools/filter";
 import { EventRepository } from "../event";
 import { config, nip11 } from "../../config";
-import { hexRegExp } from "../../nostr";
-import { EventDeletion } from "nostr-tools/kinds";
+import { hexRegExp, RequestToVanish } from "../../nostr";
+import { EventDeletion, GiftWrap } from "nostr-tools/kinds";
 
 export class InMemoryEventRepository implements EventRepository {
   #events = new Map<string, NostrEvent>();
@@ -70,11 +70,29 @@ export class InMemoryEventRepository implements EventRepository {
       if (
         e === undefined ||
         e.pubkey !== event.pubkey ||
-        e.kind === EventDeletion
+        e.kind === EventDeletion ||
+        e.kind === RequestToVanish
       ) {
         continue;
       }
       this.#events.delete(id);
+    }
+  }
+
+  async vanishBy(event: NostrEvent): Promise<void> {
+    for (const [id, e] of this.#events) {
+      if (e.created_at > event.created_at) {
+        continue;
+      }
+
+      if (e.pubkey === event.pubkey) {
+        this.#events.delete(id);
+      } else if (
+        e.kind === GiftWrap &&
+        e.tags.some((tag) => tag[0] === "p" && tag[1] === event.pubkey)
+      ) {
+        this.#events.delete(id);
+      }
     }
   }
 

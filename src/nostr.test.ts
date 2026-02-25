@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { broadcastable, validateFilter } from "./nostr";
+import {
+  broadcastable,
+  isVanishTarget,
+  RequestToVanish,
+  validateFilter,
+} from "./nostr";
 import { finalizeEvent, generateSecretKey } from "nostr-tools/pure";
 import { NostrConnect } from "nostr-tools/kinds";
 
@@ -216,3 +221,54 @@ describe("broadcastable", () => {
     ).toBe(false);
   });
 });
+
+//#region NIP-62 Request to Vanish
+
+describe("isVanishTarget", () => {
+  const url = "wss://example.com/";
+  const seckey = generateSecretKey();
+
+  it("returns true if the event has an ALL_RELAYS tag", () => {
+    const event = finalizeEvent(
+      {
+        kind: RequestToVanish,
+        tags: [["relay", "ALL_RELAYS"]],
+        content: "",
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      seckey,
+    );
+
+    expect(isVanishTarget(event, url)).toBe(true);
+  });
+
+  it("returns true if the event has a relay tag matching the given URL", () => {
+    const event = finalizeEvent(
+      {
+        kind: RequestToVanish,
+        tags: [["relay", url]],
+        content: "",
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      seckey,
+    );
+
+    expect(isVanishTarget(event, url)).toBe(true);
+  });
+
+  it("returns false if the event does not have a relay tag matching the given URL", () => {
+    const event = finalizeEvent(
+      {
+        kind: RequestToVanish,
+        tags: [["relay", "wss://wrong.com/"]],
+        content: "",
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      seckey,
+    );
+
+    expect(isVanishTarget(event, url)).toBe(false);
+  });
+});
+
+//#endregion

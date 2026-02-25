@@ -10,6 +10,8 @@ export class NoopEventRepository implements EventRepository {
 
   async deleteBy(): Promise<void> {}
 
+  async vanishBy(): Promise<void> {}
+
   async find(): Promise<NostrEvent[]> {
     return [];
   }

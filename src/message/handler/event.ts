@@ -11,7 +11,7 @@ import {
   isReplaceableKind,
 } from "nostr-tools/kinds";
 import { sendAuthChallenge } from "../sender/auth";
-import { broadcastable } from "../../nostr";
+import { broadcastable, isVanishTarget, RequestToVanish } from "../../nostr";
 
 export class EventMessageHandler implements MessageHandler {
   #event: NostrEvent;
@@ -30,9 +30,11 @@ export class EventMessageHandler implements MessageHandler {
     }
 
     const connection = ws.deserializeAttachment() as Connection;
-    const { auth } = connection;
 
-    if (auth === undefined || !connection.pubkeys.has(this.#event.pubkey)) {
+    if (
+      connection.auth === undefined ||
+      !connection.pubkeys.has(this.#event.pubkey)
+    ) {
       const isProtected = this.#event.tags.some(([name]) => name === "-");
 
       if (
@@ -89,8 +91,17 @@ export class EventMessageHandler implements MessageHandler {
       );
     } else if (!isEphemeralKind(this.#event.kind)) {
       await this.#eventsRepository.save(this.#event, connection.ipAddress);
-      if (this.#event.kind === EventDeletion) {
-        await this.#eventsRepository.deleteBy(this.#event);
+      switch (this.#event.kind) {
+        case EventDeletion: {
+          await this.#eventsRepository.deleteBy(this.#event);
+          break;
+        }
+        case RequestToVanish: {
+          if (isVanishTarget(this.#event, connection.url)) {
+            await this.#eventsRepository.vanishBy(this.#event);
+          }
+          break;
+        }
       }
     }
 
