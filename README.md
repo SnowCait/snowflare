@@ -2,6 +2,10 @@
 
 Nostr relay running on Cloudflare Workers.
 
+## Supported NIPs
+
+See [config](./config/default.ts).
+
 ## Install
 
 ```shell
