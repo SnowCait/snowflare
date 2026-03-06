@@ -145,3 +145,11 @@ export function isVanishTarget(event: NostrEvent, url: string): boolean {
 }
 
 //#endregion
+
+//#region NIP-70 Protected Events
+
+export function isProtectedEvent(event: NostrEvent): boolean {
+  return event.tags.some(([name]) => name === "-");
+}
+
+//#endregion

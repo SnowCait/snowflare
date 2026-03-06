@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   broadcastable,
+  isProtectedEvent,
   isVanishTarget,
   RequestToVanish,
   validateFilter,
@@ -268,6 +269,42 @@ describe("isVanishTarget", () => {
     );
 
     expect(isVanishTarget(event, url)).toBe(false);
+  });
+});
+
+//#endregion
+
+//#region NIP-70 Protected Events
+
+describe("isProtectedEvent", () => {
+  const seckey = generateSecretKey();
+
+  it("returns true if the event has a - tag", () => {
+    const event = finalizeEvent(
+      {
+        kind: 1,
+        tags: [["-"]],
+        content: "",
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      seckey,
+    );
+
+    expect(isProtectedEvent(event)).toBe(true);
+  });
+
+  it("returns false if the event does not have a - tag", () => {
+    const event = finalizeEvent(
+      {
+        kind: 1,
+        tags: [],
+        content: "",
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      seckey,
+    );
+
+    expect(isProtectedEvent(event)).toBe(false);
   });
 });
 

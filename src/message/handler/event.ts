@@ -9,9 +9,15 @@ import {
   isEphemeralKind,
   isAddressableKind,
   isReplaceableKind,
+  Repost,
 } from "nostr-tools/kinds";
 import { sendAuthChallenge } from "../sender/auth";
-import { broadcastable, isVanishTarget, RequestToVanish } from "../../nostr";
+import {
+  broadcastable,
+  isProtectedEvent,
+  isVanishTarget,
+  RequestToVanish,
+} from "../../nostr";
 
 export class EventMessageHandler implements MessageHandler {
   #event: NostrEvent;
@@ -35,7 +41,7 @@ export class EventMessageHandler implements MessageHandler {
       connection.auth === undefined ||
       !connection.pubkeys.has(this.#event.pubkey)
     ) {
-      const isProtected = this.#event.tags.some(([name]) => name === "-");
+      const isProtected = isProtectedEvent(this.#event);
 
       if (
         nip11.limitation.auth_required ||
@@ -60,6 +66,25 @@ export class EventMessageHandler implements MessageHandler {
           ]),
         );
         return;
+      }
+    }
+
+    if (this.#event.kind === Repost && this.#event.content.startsWith("{")) {
+      try {
+        const repostedEvent = JSON.parse(this.#event.content) as NostrEvent;
+        if (isProtectedEvent(repostedEvent)) {
+          ws.send(
+            JSON.stringify([
+              "OK",
+              this.#event.id,
+              false,
+              "blocked: reposts can't embed protected events",
+            ]),
+          );
+          return;
+        }
+      } catch {
+        // Noop
       }
     }
 
