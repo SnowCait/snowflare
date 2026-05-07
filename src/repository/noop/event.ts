@@ -12,6 +12,8 @@ export class NoopEventRepository implements EventRepository {
 
   async vanishBy(): Promise<void> {}
 
+  async expire(): Promise<void> {}
+
   async find(): Promise<NostrEvent[]> {
     return [];
   }

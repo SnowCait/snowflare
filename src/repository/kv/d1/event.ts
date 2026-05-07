@@ -181,6 +181,15 @@ export class KvD1EventRepository implements EventRepository {
     console.debug("[vanish result gift wrap]", { result: giftWrapResult });
   }
 
+  async expire(until: number): Promise<void> {
+    const result = await this.#env.DB.prepare(
+      "DELETE FROM events WHERE created_at < ? AND kind NOT IN (?, ?)",
+    )
+      .bind(until, EventDeletion, RequestToVanish)
+      .run<void>();
+    console.debug("[expire result]", { result });
+  }
+
   async find(filter: Filter): Promise<NostrEvent[]> {
     if (
       Object.keys(filter).every((key) => idsFilterKeys.includes(key)) &&

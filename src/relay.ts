@@ -119,6 +119,17 @@ export class Relay extends DurableObject<Bindings> {
     return deleted;
   }
 
+  async expire(): Promise<void> {
+    if (config.expiration === undefined) {
+      return;
+    }
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const until =
+      Math.floor(today.getTime() / 1000) - config.expiration * 24 * 60 * 60;
+    await this.#eventsRepository.expire(until);
+  }
+
   #convertToWebSocketUrl(url: string): string {
     const u = new URL(url);
     u.protocol = u.protocol === "http:" ? "ws:" : "wss:";

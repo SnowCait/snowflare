@@ -1,7 +1,7 @@
 {
   "name": "snowflare",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --test-scheduled",
     "deploy": "wrangler deploy --minify",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",

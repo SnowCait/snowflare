@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { Relay } from "./relay";
 import { nip11 } from "./config";
-import { Env } from "./app";
+import { Bindings, Env } from "./app";
 import { HTTPException } from "hono/http-exception";
 import * as nip98 from "nostr-tools/nip98";
 import client from "./client";
@@ -108,6 +108,13 @@ app.delete("/maintenance", async (c) => {
 
 //#endregion
 
-export default app;
+export default {
+  fetch: app.fetch,
+  scheduled: async (_: ScheduledController, env: Bindings) => {
+    const stub = env.RELAY.getByName("relay");
+    await stub.expire();
+    await stub.prune();
+  },
+};
 
 export { Relay };

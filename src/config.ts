@@ -9,6 +9,7 @@ export type Config = {
   auth_limit?: number;
   default_limit?: number;
   repository_type?: RepositoryType;
+  expiration?: number; // days
 };
 
 export const config = { ...defaultConfig, ...overrideConfig };

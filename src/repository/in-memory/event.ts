@@ -96,6 +96,17 @@ export class InMemoryEventRepository implements EventRepository {
     }
   }
 
+  async expire(until: number): Promise<void> {
+    console.log("[expire until]", new Date(until * 1000));
+    for (const [id, e] of this.#events) {
+      if (e.created_at >= until) {
+        continue;
+      }
+
+      this.#events.delete(id);
+    }
+  }
+
   async find(filter: Filter): Promise<NostrEvent[]> {
     const limit = Math.min(
       filter.limit ?? config.default_limit,

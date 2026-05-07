@@ -23,4 +23,5 @@ export default {
   auth_limit: 5, // Within the Connection size limit
   default_limit: 50,
   repository_type: "kv-d1",
+  expiration: undefined,
 } as const satisfies Config;

@@ -45,4 +45,9 @@
       "invocation_logs": false,
     },
   },
+  "triggers": {
+    "crons": [
+      "0 19 * * *", // 4:00 JST
+    ],
+  },
 }

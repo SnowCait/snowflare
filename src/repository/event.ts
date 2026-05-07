@@ -13,5 +13,6 @@ export interface EventRepository {
   ): Promise<void>;
   deleteBy(event: NostrEvent): Promise<void>;
   vanishBy(event: NostrEvent): Promise<void>;
+  expire(until: number): Promise<void>;
   find(filter: Filter): Promise<NostrEvent[]>;
 }
