@@ -81,7 +81,7 @@ export function validateFilter(filter: Filter): boolean {
     filter.limit !== undefined &&
     !(
       Number.isInteger(filter.limit) &&
-      0 < filter.limit &&
+      0 <= filter.limit &&
       filter.limit <= nip11.limitation.max_limit
     )
   ) {
