@@ -8,13 +8,12 @@
     "test": "vitest"
   },
   "dependencies": {
-    "cloudflare": "^7.1.0",
     "hono": "^4.13.3",
     "nostr-tools": "^2.24.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.1.4",
-    "@cloudflare/workers-types": "^4.20241218.0",
+    "@cloudflare/workers-types": "^4.20260702.1",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.1.1",

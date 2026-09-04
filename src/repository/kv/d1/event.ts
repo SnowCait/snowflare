@@ -11,7 +11,6 @@ import {
   tagsFilterRegExp,
 } from "../../../nostr";
 import { EventDeletion, GiftWrap } from "nostr-tools/kinds";
-import Cloudflare from "cloudflare";
 
 export class KvD1EventRepository implements EventRepository {
   #env: Bindings;
@@ -203,47 +202,18 @@ export class KvD1EventRepository implements EventRepository {
   }
 
   async #findByIds(ids: string[]): Promise<NostrEvent[]> {
-    // Workaround: The local environment runs on Miniflare but cannot be accessed via the REST API.
-    if (this.#env.LOCAL === "true") {
-      const events = await Promise.all(
-        ids.map(async (id) => {
-          try {
-            const json = await this.#env.events.get(id);
-            if (json === null) {
-              return null;
-            }
-            return JSON.parse(json) as NostrEvent;
-          } catch (error) {
-            console.error("[json parse failed]", error, `(${ids.length})`);
-            return null;
-          }
-        }),
+    const chunk = <T>(array: T[], size: number): T[][] =>
+      Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
+        array.slice(i * size, i * size + size),
       );
-      return sortEvents(events.filter((event) => event !== null));
-    } else {
-      const chunk = <T>(array: T[], size: number): T[][] =>
-        Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
-          array.slice(i * size, i * size + size),
-        );
 
-      const client = new Cloudflare({ apiToken: this.#env.API_TOKEN });
-      const events = await Promise.all(
-        chunk(ids, 100).map(async (ids: string[]): Promise<NostrEvent[]> => {
-          const response = await client.kv.namespaces.keys.bulkGet(
-            this.#env.KV_ID_EVENTS,
-            {
-              account_id: this.#env.ACCOUNT_ID,
-              keys: ids.slice(0, 100),
-              type: "json",
-            },
-          );
-          return Object.values(response?.values ?? {}).filter(
-            (v) => v !== null,
-          );
-        }),
-      );
-      return sortEvents(events.flat());
-    }
+    const events = await Promise.all(
+      chunk(ids, 100).map(async (ids): Promise<NostrEvent[]> => {
+        const values = await this.#env.events.get<NostrEvent>(ids, "json");
+        return [...values.values()].filter((event) => event !== null);
+      }),
+    );
+    return sortEvents(events.flat());
   }
 
   async #findByQuery(filter: Filter): Promise<NostrEvent[]> {
