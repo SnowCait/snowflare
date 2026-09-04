@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { EventMessageHandler } from "./event";
 import { finalizeEvent, generateSecretKey, NostrEvent } from "nostr-tools";
-import { env, runInDurableObject } from "cloudflare:test";
+import { env } from "cloudflare:workers";
+import { runInDurableObject } from "cloudflare:test";
 import { Repost, ShortTextNote } from "nostr-tools/kinds";
 import { InMemoryEventRepository } from "../../repository/in-memory/event";
 
