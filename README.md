@@ -32,31 +32,12 @@ Database:
 npx wrangler d1 migrations apply snowflare-events --local
 ```
 
-Environment variables:
-
-Create `.dev.vars` file and set your API Token, Account ID and KV ID of events to use [Cloudflare API](https://developers.cloudflare.com/api/resources/kv/subresources/namespaces/subresources/keys/methods/bulk_get/).
-
-```
-API_TOKEN=
-ACCOUNT_ID=
-KV_ID_EVENTS=
-LOCAL=true
-```
-
 #### Production
 
 Database:
 
 ```shell
 npx wrangler d1 migrations apply snowflare-events --remote
-```
-
-Environment variables:
-
-```shell
-npx wrangler secret put API_TOKEN
-npx wrangler secret put ACCOUNT_ID
-npx wrangler secret put KV_ID_EVENTS
 ```
 
 ## Development
