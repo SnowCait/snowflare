@@ -31,7 +31,14 @@ export class EventMessageHandler implements MessageHandler {
   async handle(ctx: DurableObjectState, ws: WebSocket): Promise<void> {
     if (!verifyEvent(this.#event)) {
       console.debug("[EVENT invalid]", { event: this.#event });
-      ws.send(JSON.stringify(["NOTICE", "invalid: event"]));
+      ws.send(
+        JSON.stringify([
+          "OK",
+          this.#event.id,
+          false,
+          "invalid: event id or signature is wrong",
+        ]),
+      );
       return;
     }
 
