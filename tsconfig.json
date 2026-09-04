@@ -8,7 +8,7 @@
     "lib": ["ESNext"],
     "types": [
       "@cloudflare/workers-types/2023-07-01",
-      "@cloudflare/vitest-pool-workers"
+      "@cloudflare/vitest-plugin/types"
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"

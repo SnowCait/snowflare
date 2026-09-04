@@ -1,7 +1,8 @@
 import { fileURLToPath } from "node:url";
-import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
+import { defineConfig } from "vitest/config";
 
-export default defineWorkersConfig({
+export default defineConfig({
   resolve: {
     alias: {
       "../config/override": fileURLToPath(
@@ -10,10 +11,13 @@ export default defineWorkersConfig({
     },
   },
   test: {
-    poolOptions: {
-      workers: {
-        wrangler: { configPath: "./wrangler.jsonc" },
-      },
-    },
+    testTimeout: 30_000,
   },
+  plugins: [
+    cloudflareTest({
+      wrangler: {
+        configPath: "./wrangler.jsonc",
+      },
+    }),
+  ],
 });
