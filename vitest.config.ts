@@ -5,7 +5,7 @@ export default defineWorkersConfig({
   resolve: {
     alias: {
       "../config/override": fileURLToPath(
-        new URL("./config/default.ts", import.meta.url),
+        new URL("./config/test.ts", import.meta.url),
       ),
     },
   },
