@@ -5,15 +5,14 @@ import { sendAuthChallenge } from "./message/sender/auth";
 import { sendClosed } from "./message/sender/closed";
 import { sendNotice } from "./message/sender/notice";
 import { MessageHandlerFactory } from "./message/factory";
-import { Bindings } from "./app";
 import { EventRepository } from "./repository/event";
 import { RepositoryFactory } from "./repository/factory";
 import { Filter } from "nostr-tools/filter";
 
-export class Relay extends DurableObject<Bindings> {
+export class Relay extends DurableObject<Env> {
   #eventsRepository: EventRepository;
 
-  constructor(ctx: DurableObjectState, env: Bindings) {
+  constructor(ctx: DurableObjectState, env: Env) {
     console.debug("[relay constructor]");
 
     super(ctx, env);

@@ -4,7 +4,6 @@ import { config, nip11 } from "../../config";
 import { Auth } from "../../auth";
 import { Connection } from "../../connection";
 import { Account } from "../../Account";
-import { Bindings } from "../../app";
 
 export class AuthMessageHandler implements MessageHandler {
   #event: NostrEvent;
@@ -13,11 +12,7 @@ export class AuthMessageHandler implements MessageHandler {
     this.#event = event;
   }
 
-  async handle(
-    _: DurableObjectState,
-    ws: WebSocket,
-    env: Bindings,
-  ): Promise<void> {
+  async handle(_: DurableObjectState, ws: WebSocket, env: Env): Promise<void> {
     const connection = ws.deserializeAttachment() as Connection;
 
     if (connection.pubkeys.has(this.#event.pubkey)) {

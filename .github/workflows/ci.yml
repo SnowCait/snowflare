@@ -24,5 +24,6 @@ jobs:
           cache: "npm"
 
       - run: npm ci
+      - run: npx wrangler types --check
       - run: npm run lint
       - run: npm test -- --run

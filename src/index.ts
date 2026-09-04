@@ -1,14 +1,14 @@
 import { Hono } from "hono";
 import { Relay } from "./relay";
 import { nip11 } from "./config";
-import { Bindings, Env } from "./app";
+import { AppEnv } from "./app";
 import { HTTPException } from "hono/http-exception";
 import * as nip98 from "nostr-tools/nip98";
 import client from "./client";
 import { Account } from "./Account";
 import { createMiddleware } from "hono/factory";
 
-const app = new Hono<Env>();
+const app = new Hono<AppEnv>();
 
 app.get("/", async (c) => {
   if (c.req.header("Upgrade") === "websocket") {
@@ -110,7 +110,7 @@ app.delete("/maintenance", async (c) => {
 
 export default {
   fetch: app.fetch,
-  scheduled: async (_: ScheduledController, env: Bindings) => {
+  scheduled: async (_: ScheduledController, env: Env) => {
     const stub = env.RELAY.getByName("relay");
     await stub.expire();
     await stub.prune();
