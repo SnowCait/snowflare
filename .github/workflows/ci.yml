@@ -26,4 +26,5 @@ jobs:
       - run: npm ci
       - run: npx wrangler types --check
       - run: npm run lint
+      - run: npm run typecheck
       - run: npm test -- --run
