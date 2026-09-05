@@ -14,6 +14,6 @@ export default [
       "@typescript-eslint/no-namespace": "off",
     },
   }),
-  { ignores: [".wrangler/"] },
+  { ignores: [".wrangler/", "worker-configuration.d.ts"] },
   eslintConfigPrettier,
 ];

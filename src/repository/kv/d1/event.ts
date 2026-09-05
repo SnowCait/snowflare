@@ -1,7 +1,6 @@
 import { NostrEvent, sortEvents } from "nostr-tools/core";
 import { Filter } from "nostr-tools/filter";
 import { EventRepository } from "../../event";
-import { Bindings } from "../../../app";
 import { config, nip11 } from "../../../config";
 import {
   hexRegExp,
@@ -13,9 +12,9 @@ import {
 import { EventDeletion, GiftWrap } from "nostr-tools/kinds";
 
 export class KvD1EventRepository implements EventRepository {
-  #env: Bindings;
+  #env: Env;
 
-  constructor(env: Bindings) {
+  constructor(env: Env) {
     this.#env = env;
   }
 

@@ -5,7 +5,8 @@
     "deploy": "wrangler deploy --minify",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
-    "test": "vitest"
+    "test": "vitest",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "hono": "^4.13.3",
@@ -13,8 +14,8 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.1.4",
-    "@cloudflare/workers-types": "^4.20260702.1",
     "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
     "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.1.1",
     "globals": "^17.11.0",

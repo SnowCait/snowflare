@@ -1,14 +1,12 @@
-import { Bindings } from "./app";
-
 type Data = {
   agreedAt: number;
 };
 
 export class Account {
   #pubkey: string;
-  #env: Bindings;
+  #env: Env;
 
-  constructor(pubkey: string, env: Bindings) {
+  constructor(pubkey: string, env: Env) {
     this.#pubkey = pubkey;
     this.#env = env;
   }
