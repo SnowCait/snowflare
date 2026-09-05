@@ -2,3 +2,4 @@
 !.gitignore
 !default.*
 !test.*
+!override.d.ts

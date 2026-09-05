@@ -5,6 +5,7 @@
     "deploy": "wrangler deploy --minify",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "cf-typegen": "wrangler types"
   },
@@ -21,6 +22,7 @@
     "globals": "^17.11.0",
     "nostr-typedef": "^0.13.0",
     "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.11",
     "wrangler": "^4.125.0"
