@@ -1,5 +1,5 @@
-import type { Config } from "../src/config";
-
-declare const overrideConfig: Config;
+declare const overrideConfig: {
+  readonly nip11?: Record<string, never>;
+};
 
 export default overrideConfig;
