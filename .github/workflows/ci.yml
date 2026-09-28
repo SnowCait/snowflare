@@ -23,6 +23,8 @@ jobs:
           node-version: "24"
           cache: "npm"
 
+      - run: npm install --package-lock-only --ignore-scripts
+      - run: git diff --exit-code -- package-lock.json
       - run: npm ci
       - run: npx wrangler types --check
       - run: npm run lint
