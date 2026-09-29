@@ -72,6 +72,43 @@ describe("EventMessageHandler", () => {
     });
   });
 
+  it("should reply with an error when saving the event fails", async () => {
+    const event = finalizeEvent(
+      {
+        kind: ShortTextNote,
+        content: "",
+        tags: [],
+        created_at: Math.floor(Date.now() / 1000),
+      },
+      seckey,
+    );
+    class FailingEventRepository extends InMemoryEventRepository {
+      async save(): Promise<boolean> {
+        throw new Error("storage unavailable");
+      }
+    }
+    const handler = new EventMessageHandler(
+      event,
+      new FailingEventRepository(),
+    );
+    const stub = env.RELAY.getByName("test");
+    await runInDurableObject(stub, async (_, ctx) => {
+      const { 0: client, 1: ws } = new WebSocketPair();
+      ctx.acceptWebSocket(ws);
+      client.accept();
+      const messages: unknown[] = [];
+      client.addEventListener("message", ({ data }) => {
+        messages.push(JSON.parse(data as string));
+      });
+      ws.serializeAttachment({});
+      await handler.handle(ctx, ws);
+      await scheduler.wait(0); // Messages are delivered to the other end asynchronously
+      expect(messages).toEqual([
+        ["OK", event.id, false, "error: could not process the event"],
+      ]);
+    });
+  });
+
   it("should block reposts that embed protected events", async () => {
     const protectedEvent = finalizeEvent(
       {

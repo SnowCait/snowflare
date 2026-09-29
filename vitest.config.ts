@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from "node:url";
-import { cloudflareTest } from "@cloudflare/vitest-plugin";
+import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -12,12 +12,20 @@ export default defineConfig({
   },
   test: {
     testTimeout: 30_000,
+    setupFiles: ["./test/apply-migrations.ts"],
   },
   plugins: [
-    cloudflareTest({
+    cloudflareTest(async () => ({
       wrangler: {
         configPath: "./wrangler.jsonc",
       },
-    }),
+      miniflare: {
+        bindings: {
+          TEST_MIGRATIONS: await readD1Migrations(
+            fileURLToPath(new URL("./migrations", import.meta.url)),
+          ),
+        },
+      },
+    })),
   ],
 });

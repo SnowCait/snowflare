@@ -95,46 +95,79 @@ export class EventMessageHandler implements MessageHandler {
       }
     }
 
-    if (isReplaceableKind(this.#event.kind)) {
-      await this.#eventsRepository.saveReplaceableEvent(
-        this.#event,
-        connection.ipAddress,
+    if (
+      isAddressableKind(this.#event.kind) &&
+      !this.#event.tags.some(
+        ([name, value]) => name === "d" && typeof value === "string",
+      )
+    ) {
+      console.debug("[EVENT missing d tag]", { event: this.#event });
+      ws.send(
+        JSON.stringify([
+          "OK",
+          this.#event.id,
+          false,
+          "invalid: addressable event requires d tag",
+        ]),
       );
-    } else if (isAddressableKind(this.#event.kind)) {
-      if (
-        !this.#event.tags.some(
-          ([name, value]) => name === "d" && typeof value === "string",
-        )
-      ) {
-        console.debug("[EVENT missing d tag]", { event: this.#event });
-        ws.send(
-          JSON.stringify([
-            "OK",
-            this.#event.id,
-            false,
-            "invalid: addressable event requires d tag",
-          ]),
+      return;
+    }
+
+    let saved = true;
+    try {
+      if (isReplaceableKind(this.#event.kind)) {
+        await this.#eventsRepository.saveReplaceableEvent(
+          this.#event,
+          connection.ipAddress,
         );
-        return;
-      }
-      await this.#eventsRepository.saveAddressableEvent(
-        this.#event,
-        connection.ipAddress,
-      );
-    } else if (!isEphemeralKind(this.#event.kind)) {
-      await this.#eventsRepository.save(this.#event, connection.ipAddress);
-      switch (this.#event.kind) {
-        case EventDeletion: {
-          await this.#eventsRepository.deleteBy(this.#event);
-          break;
-        }
-        case RequestToVanish: {
-          if (isVanishTarget(this.#event, connection.url)) {
-            await this.#eventsRepository.vanishBy(this.#event);
+      } else if (isAddressableKind(this.#event.kind)) {
+        await this.#eventsRepository.saveAddressableEvent(
+          this.#event,
+          connection.ipAddress,
+        );
+      } else if (!isEphemeralKind(this.#event.kind)) {
+        saved = await this.#eventsRepository.save(
+          this.#event,
+          connection.ipAddress,
+        );
+        if (saved) {
+          switch (this.#event.kind) {
+            case EventDeletion: {
+              await this.#eventsRepository.deleteBy(this.#event);
+              break;
+            }
+            case RequestToVanish: {
+              if (isVanishTarget(this.#event, connection.url)) {
+                await this.#eventsRepository.vanishBy(this.#event);
+              }
+              break;
+            }
           }
-          break;
         }
       }
+    } catch (error) {
+      console.error("[EVENT save failed]", error, { event: this.#event });
+      ws.send(
+        JSON.stringify([
+          "OK",
+          this.#event.id,
+          false,
+          "error: could not process the event",
+        ]),
+      );
+      return;
+    }
+
+    if (!saved) {
+      ws.send(
+        JSON.stringify([
+          "OK",
+          this.#event.id,
+          true,
+          "duplicate: already have this event",
+        ]),
+      );
+      return;
     }
 
     ws.send(JSON.stringify(["OK", this.#event.id, true, ""]));

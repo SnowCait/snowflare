@@ -2,7 +2,9 @@ import { NostrEvent } from "nostr-tools/core";
 import { EventRepository } from "../event";
 
 export class NoopEventRepository implements EventRepository {
-  async save(): Promise<void> {}
+  async save(): Promise<boolean> {
+    return true;
+  }
 
   async saveReplaceableEvent(): Promise<void> {}
 

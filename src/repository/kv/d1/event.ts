@@ -18,10 +18,26 @@ export class KvD1EventRepository implements EventRepository {
     this.#env = env;
   }
 
-  async save(event: NostrEvent, ipAddress: string | null): Promise<void> {
+  async save(event: NostrEvent, ipAddress: string | null): Promise<boolean> {
     console.debug("[save event]", { event });
+    if (await this.#exists(event.id)) {
+      return false;
+    }
+    return await this.#insert(event, ipAddress);
+  }
+
+  async #exists(id: string): Promise<boolean> {
+    const row = await this.#env.DB.prepare(
+      "SELECT 1 FROM events WHERE id = UNHEX(?)",
+    )
+      .bind(id)
+      .first();
+    return row !== null;
+  }
+
+  async #insert(event: NostrEvent, ipAddress: string | null): Promise<boolean> {
     await this.#saveToKV(event, ipAddress);
-    await this.#saveToD1(event); // Execute after KV
+    return await this.#saveToD1(event); // Execute after KV
   }
 
   async #saveToKV(event: NostrEvent, ipAddress: string | null): Promise<void> {
@@ -30,7 +46,7 @@ export class KvD1EventRepository implements EventRepository {
     });
   }
 
-  async #saveToD1(event: NostrEvent): Promise<void> {
+  async #saveToD1(event: NostrEvent): Promise<boolean> {
     const indexedTags = event.tags.filter(
       ([name, value]) =>
         tagsFilterRegExp.test(`#${name}`) && typeof value === "string",
@@ -43,7 +59,7 @@ export class KvD1EventRepository implements EventRepository {
       return tags.set(name, values);
     }, new Map<string, string[]>());
     const result = await this.#env.DB.prepare(
-      "INSERT INTO events (id, pubkey, kind, tags, created_at) VALUES (UNHEX(?1), UNHEX(?2), ?3, json(?4), ?5)",
+      "INSERT INTO events (id, pubkey, kind, tags, created_at) VALUES (UNHEX(?1), UNHEX(?2), ?3, json(?4), ?5) ON CONFLICT (id) DO NOTHING",
     )
       .bind(
         event.id,
@@ -57,6 +73,7 @@ export class KvD1EventRepository implements EventRepository {
       .run<void>();
 
     console.debug("[save result]", { result });
+    return result.meta.changes > 0;
   }
 
   async saveReplaceableEvent(
@@ -100,7 +117,7 @@ export class KvD1EventRepository implements EventRepository {
     ipAddress: string | null,
   ): Promise<void> {
     if (results.length === 0) {
-      await this.save(event, ipAddress);
+      await this.#insert(event, ipAddress);
       return;
     }
 
@@ -114,7 +131,7 @@ export class KvD1EventRepository implements EventRepository {
     }
 
     await this.#delete(results.map(({ id }) => id));
-    await this.save(event, ipAddress);
+    await this.#insert(event, ipAddress);
   }
 
   /**
