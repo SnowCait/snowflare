@@ -8,8 +8,12 @@ import { EventDeletion, GiftWrap } from "nostr-tools/kinds";
 export class InMemoryEventRepository implements EventRepository {
   #events = new Map<string, NostrEvent>();
 
-  async save(event: NostrEvent): Promise<void> {
+  async save(event: NostrEvent): Promise<boolean> {
+    if (this.#events.has(event.id)) {
+      return false;
+    }
     this.#events.set(event.id, event);
+    return true;
   }
 
   async saveReplaceableEvent(event: NostrEvent): Promise<void> {
