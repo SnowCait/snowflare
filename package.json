@@ -10,20 +10,20 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "hono": "^4.13.3",
-    "nostr-tools": "^2.24.3"
+    "hono": "^4.13.8",
+    "nostr-tools": "^2.25.2"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.1.4",
+    "@cloudflare/vitest-plugin": "^1.1.11",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.13.3",
-    "eslint": "^10.9.0",
+    "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.1",
-    "globals": "^17.11.0",
+    "globals": "^17.12.0",
     "nostr-typedef": "^0.13.0",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.7",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.67.0",
+    "typescript-eslint": "^8.70.0",
     "vitest": "^4.1.11",
     "wrangler": "^4.125.0"
   },
