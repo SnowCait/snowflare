@@ -22,7 +22,7 @@
     "globals": "^17.11.0",
     "nostr-typedef": "^0.13.0",
     "prettier": "^3.9.6",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.11",
     "wrangler": "^4.125.0"
